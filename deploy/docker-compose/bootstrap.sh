@@ -277,7 +277,6 @@ generate_ports_env() {
         return
     fi
     
-    # 获取默认 IP
     local default_ip="127.0.0.1"
     if command -v hostname >/dev/null 2>&1 && hostname -I >/dev/null 2>&1; then
         default_ip=$(hostname -I | awk '{print $1}')
@@ -285,11 +284,19 @@ generate_ports_env() {
         default_ip=$(ifconfig | grep "inet " | grep -v 127.0.0.1 | awk '{print $2}' | head -1)
     fi
     
-    read -p "输入对外访问的IP地址，默认为 [$default_ip] " HOST_IP < /dev/tty
-    export HOST_IP=${HOST_IP:-$default_ip}
-    
-    read -p "输入访问端口，默认为 [$DEFAULT_PORT] " TRAEFIK_WEB_PORT < /dev/tty
-    export TRAEFIK_WEB_PORT=${TRAEFIK_WEB_PORT:-$DEFAULT_PORT}
+    if [ -n "${HOST_IP:-}" ] && [ -n "${TRAEFIK_WEB_PORT:-}" ]; then
+        log "INFO" "使用环境变量: HOST_IP=$HOST_IP, TRAEFIK_WEB_PORT=$TRAEFIK_WEB_PORT"
+    elif [ -t 0 ] && [ -e /dev/tty ]; then
+        read -p "输入对外访问的IP地址，默认为 [$default_ip] " HOST_IP < /dev/tty
+        export HOST_IP=${HOST_IP:-$default_ip}
+        
+        read -p "输入访问端口，默认为 [$DEFAULT_PORT] " TRAEFIK_WEB_PORT < /dev/tty
+        export TRAEFIK_WEB_PORT=${TRAEFIK_WEB_PORT:-$DEFAULT_PORT}
+    else
+        log "INFO" "非交互模式，使用默认值: HOST_IP=$default_ip, TRAEFIK_WEB_PORT=$DEFAULT_PORT"
+        export HOST_IP="$default_ip"
+        export TRAEFIK_WEB_PORT="$DEFAULT_PORT"
+    fi
     
     cat > "$PORT_ENV_FILE" <<EOF
 export HOST_IP=${HOST_IP}
@@ -772,8 +779,14 @@ init_sidecar_token() {
     
     log "WARNING" "重新初始化 Sidecar Node ID 和 Token..."
     
-    local arr
+    local arr=()
     mapfile -t arr < <($DOCKER_COMPOSE_CMD exec -T server /bin/bash -c 'python manage.py node_token_init --ip default' 2>&1 | grep -oP 'node_id: \K[0-9a-f]+|token: \K\S+')
+    
+    if [ ${#arr[@]} -lt 2 ]; then
+        log "ERROR" "无法获取 Sidecar Node ID 和 Token，请检查数据库连接"
+        log "ERROR" "可能原因: PostgreSQL 密码不匹配（重部署场景需先执行 docker-compose down -v）"
+        return 1
+    fi
     
     SIDECAR_NODE_ID="${arr[0]}"
     SIDECAR_INIT_TOKEN="${arr[1]}"
@@ -816,8 +829,8 @@ update_common_env_flags() {
 #=============================================================================
 do_install() {
     OFFLINE="${OFFLINE:-false}"
+    local clean_install=false
     
-    # 加载已有配置
     if [ -f "$COMMON_ENV_FILE" ]; then
         log "SUCCESS" "发现配置文件，加载已保存的配置..."
         source "$COMMON_ENV_FILE"
@@ -825,13 +838,15 @@ do_install() {
     
     load_mirror_config
     
-    # 默认值
     export OPSPILOT_ENABLED="${OPSPILOT_ENABLED:-false}"
     export VLLM_ENABLED="${VLLM_ENABLED:-false}"
     
-    # 解析命令行参数
     for arg in "$@"; do
         case "$arg" in
+            --clean)
+                clean_install=true
+                log "WARNING" "检测到 --clean 参数，将清理现有数据并重新部署"
+                ;;
             --opspilot)
                 export OPSPILOT_ENABLED=true
                 log "INFO" "命令行指定 --opspilot，启用 OpsPilot"
@@ -847,6 +862,13 @@ do_install() {
                 ;;
         esac
     done
+    
+    if [ "$clean_install" = true ]; then
+        log "WARNING" "正在停止并清理现有容器和数据卷..."
+        $DOCKER_COMPOSE_CMD down -v 2>/dev/null || true
+        rm -f "$COMMON_ENV_FILE" "$PORT_ENV_FILE" .env 2>/dev/null || true
+        log "SUCCESS" "清理完成，开始全新部署"
+    fi
     
     # 构建安装应用列表
     INSTALL_APPS="system_mgmt,cmdb,monitor,node_mgmt,console_mgmt,alerts,log,mlops,operation_analysis"
