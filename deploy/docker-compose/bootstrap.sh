@@ -225,7 +225,7 @@ load_docker_images_with_hash_check() {
         image_name=$(echo "$line" | awk '{print $1}')
         image_hash=$(echo "$line" | awk '{print $2}')
         image_file=$(echo "$line" | awk '{print $3}')
-        ((total_count++))
+        total_count=$((total_count + 1))
         
         # 检查镜像是否存在且 hash 匹配
         if docker image inspect "$image_name" >/dev/null 2>&1; then
@@ -233,7 +233,7 @@ load_docker_images_with_hash_check() {
             local_hash=$(docker image inspect "$image_name" --format '{{.Id}}' 2>/dev/null | sed 's/sha256://')
             if [ "$local_hash" == "$image_hash" ]; then
                 log "SUCCESS" "镜像已存在且 hash 匹配，跳过: $image_name"
-                ((skipped_count++))
+                skipped_count=$((skipped_count + 1))
                 continue
             fi
             log "WARNING" "镜像存在但 hash 不匹配，需要更新: $image_name"
@@ -246,7 +246,7 @@ load_docker_images_with_hash_check() {
         
         log "INFO" "正在加载镜像文件: $image_file"
         docker load -i "$image_tar"
-        ((loaded_count++))
+        loaded_count=$((loaded_count + 1))
         log "SUCCESS" "镜像加载完成: $image_name"
     done < "$hash_file"
     
@@ -948,14 +948,14 @@ EOF
         # 跳过 OpsPilot 镜像
         if [[ "$skip_opspilot" == "true" ]] && [[ "$image_var" =~ METIS ]]; then
             log "INFO" "跳过: ${image_var}"
-            ((skipped_count++))
+            skipped_count=$((skipped_count + 1))
             continue
         fi
         
         # 跳过 vLLM 镜像
         if [[ "$skip_vllm" == "true" ]] && [[ "$image_var" =~ VLLM ]]; then
             log "INFO" "跳过: ${image_var}"
-            ((skipped_count++))
+            skipped_count=$((skipped_count + 1))
             continue
         fi
         
@@ -982,7 +982,7 @@ EOF
         if [ -n "$image_hash" ]; then
             echo "$original_name $image_hash $safe_filename" >> "$hash_file"
             log "SUCCESS" "已保存: $original_name"
-            ((image_count++))
+            image_count=$((image_count + 1))
         fi
     done
     
