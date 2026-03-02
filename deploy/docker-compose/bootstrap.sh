@@ -573,10 +573,13 @@ cp -a "${OPT}/release/windows/fusion-collectors/bin/"* "${PKG}/collector/windows
 # 构建 Linux 包
 log "INFO" "Building Linux package..."
 cp -a "${STAGE_L}/misc/linux/"* "${STAGE_L}/"
+# 保留原始 VERSION 文件供 init_plugins 使用
 cp "${STAGE_L}/misc/VERSION" "${PKG}/controller/"
+# 从 VERSION 文件提取版本号（仅数值，不带变量名）写入包内
+source "${STAGE_L}/misc/VERSION"
+echo "${LINUX_SIDECAR_VERSION}" > "${STAGE_L}/VERSION"
 mkdir -p "${STAGE_L}/certs"
 cp "${PKG}/controller/linux/certs/ca.crt" "${STAGE_L}/certs/"
-cp "${STAGE_L}/misc/VERSION" "${STAGE_L}/"
 rm -rf "${STAGE_L}/misc"
 (cd "${OPT}" && zip -rq "${PKG}/controller/fusion-collectors-linux-amd64.zip" fusion-collectors)
 log "SUCCESS" "Linux package built."
@@ -587,7 +590,8 @@ mkdir -p "$(dirname ${STAGE_W})"
 cp -a "${OPT}/release/windows/"* "$(dirname ${STAGE_W})/"
 mkdir -p "${STAGE_W}/certs"
 cp "${PKG}/controller/windows/certs/ca.crt" "${STAGE_W}/certs/"
-cp "${STAGE_L}/VERSION" "${STAGE_W}/"
+# 写入纯版本号
+echo "${WINDOWS_SIDECAR_VERSION}" > "${STAGE_W}/VERSION"
 rm -rf "${STAGE_W}/misc"
 cp ${STAGE_W}/collector-sidecar-installer.exe "${PKG}/controller/windows/"
 (cd "${OPT}/windows" && zip -rq "${PKG}/controller/fusion-collectors-windows-amd64.zip" fusion-collectors)
