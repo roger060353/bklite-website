@@ -7,19 +7,8 @@ export async function onRequest(context) {
   const response = await context.next();
   const url = new URL(context.request.url);
 
-  const newResponse = new Response(response.body, response);
-
-  // 调试：暴露 Cloudflare 拿到的各种 IP 信息
-  const cfIP = context.request.headers.get("CF-Connecting-IP") || "";
-  const xff = context.request.headers.get("X-Forwarded-For") || "";
-  const realIP = context.request.headers.get("X-Real-IP") || "";
-
-  newResponse.headers.set("X-Debug-CF-IP", cfIP);
-  newResponse.headers.set("X-Debug-XFF", xff);
-  newResponse.headers.set("X-Debug-Real-IP", realIP);
-
   if (TRACK_PATHS.includes(url.pathname)) {
-    newResponse.headers.set("X-Debug-Sent-XFF", cfIP);
+    const cfIP = context.request.headers.get("CF-Connecting-IP") || "";
 
     context.waitUntil(
       fetch(UMAMI_URL, {
@@ -28,6 +17,7 @@ export async function onRequest(context) {
           "Content-Type": "application/json",
           "User-Agent": "Mozilla/5.0 (Compatible; BKLite Tracker/1.0)",
           "X-Forwarded-For": cfIP,
+          "X-Real-IP": cfIP,
         },
         body: JSON.stringify({
           payload: {
@@ -45,5 +35,5 @@ export async function onRequest(context) {
     );
   }
 
-  return newResponse;
+  return response;
 }
