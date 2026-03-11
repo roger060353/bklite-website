@@ -2,7 +2,7 @@
 node_modules/
 .pnp
 .pnp.js
-
+.yarn.lock
 # Production
 build/
 .docusaurus/
