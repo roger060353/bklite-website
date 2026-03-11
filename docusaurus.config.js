@@ -40,6 +40,14 @@ const config = {
     },
   ],
 
+  scripts: [
+    {
+      src: 'https://bklite.canway.net/umami/script.js',
+      defer: true,
+      'data-website-id': '00046c9f-e7dd-4b6f-8dd2-ab38174792c6',
+    },
+  ],
+
   presets: [
     [
       'classic',
