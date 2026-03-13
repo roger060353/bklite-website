@@ -1,0 +1,70 @@
+/* Tab shell for the AI体验 page */
+.demoPage {
+  min-height: calc(100vh - 60px);
+
+  /* Design System: Data-Dense Dashboard */
+  --color-primary: #1E40AF;
+  --color-primary-light: #3B82F6;
+  --color-primary-lighter: #60A5FA;
+  --color-cta: #F59E0B;
+  --color-cta-hover: #D97706;
+  --color-background: #F8FAFC;
+  --color-surface: #FFFFFF;
+  --color-text-primary: #1E3A8A;
+  --color-text-secondary: #64748B;
+  --color-text-muted: #94A3B8;
+  --color-border: #E2E8F0;
+  --color-border-light: #F1F5F9;
+  --color-success: #10B981;
+  --color-danger: #EF4444;
+
+  /* Typography */
+  --font-sans: 'Fira Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'Fira Code', 'Monaco', 'Consolas', monospace;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+
+  /* Transitions */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ==================== Tab Bar ==================== */
+.tabBar {
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.tabBarInner {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: flex;
+}
+
+.tabItem {
+  padding: 14px 24px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  border: none;
+  background: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  font-family: var(--font-sans);
+}
+
+.tabItem:hover {
+  color: var(--color-text-primary);
+}
+
+.tabItemActive {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+}

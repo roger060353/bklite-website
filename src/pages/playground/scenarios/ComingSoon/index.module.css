@@ -1,0 +1,59 @@
+/* ComingSoon scenario placeholder */
+
+.comingSoon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 64px 24px;
+  text-align: center;
+}
+
+.iconWrapper {
+  width: 72px;
+  height: 72px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(30, 64, 175, 0.08) 0%, rgba(59, 130, 246, 0.08) 100%);
+  border: 1px solid rgba(30, 64, 175, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.iconWrapper svg {
+  width: 32px;
+  height: 32px;
+  color: var(--color-primary-light);
+}
+
+.title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0 0 8px;
+}
+
+.description {
+  font-size: 15px;
+  color: var(--color-text-secondary);
+  margin: 0 0 24px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: var(--color-border-light);
+  border: 1px solid var(--color-border);
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.badge svg {
+  width: 14px;
+  height: 14px;
+}

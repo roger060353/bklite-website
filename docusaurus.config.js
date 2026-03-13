@@ -19,6 +19,11 @@ const config = {
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
 
+  customFields: {
+    apiBaseUrl: 'https://bklite.canway.net/api/v1/mlops',
+    loginBaseUrl: 'https://bklite.canway.net/auth/signin',
+  },
+
   i18n: {
     defaultLocale: 'zh-Hans',
     locales: ['zh-Hans', 'en'],
@@ -105,6 +110,11 @@ const config = {
           {
             "label": "价格",
             "to": "/pricing"
+          },
+          {
+            label: 'AI体验',
+            to: '/playground',
+            position: 'left',
           },
           {
             label: '在线体验',
