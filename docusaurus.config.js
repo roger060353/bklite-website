@@ -122,6 +122,11 @@ const config = {
             position: 'right',
           },
           {
+            type: 'custom-join-community',
+            label: '加入社区',
+            position: 'right',
+          },
+          {
             href: 'https://deepwiki.com/TencentBlueKing/bk-lite',
             label: 'DeepWiki',
             position: 'right',

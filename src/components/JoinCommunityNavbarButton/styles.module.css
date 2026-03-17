@@ -1,0 +1,229 @@
+.navbarCommunityButton {
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  padding: 8px 16px;
+  border-radius: 20px;
+  line-height: 1.5;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  text-decoration: none !important;
+  -webkit-backdrop-filter: blur(12px) saturate(150%);
+  backdrop-filter: blur(12px) saturate(150%);
+  color: #4f46e5;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(129, 140, 248, 0.08) 100%);
+  border: 1px solid rgba(129, 140, 248, 0.2);
+  box-shadow:
+    0 2px 9px rgba(99, 102, 241, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.42);
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: inherit;
+  font-synthesis: weight style;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+  gap: 6px;
+  margin: 0;
+}
+
+.navbarCommunityButton:hover {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.14) 0%, rgba(129, 140, 248, 0.12) 100%);
+  border-color: rgba(129, 140, 248, 0.28);
+  box-shadow:
+    0 5px 16px rgba(99, 102, 241, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  transform: translateY(-1px);
+}
+
+.navbarCommunityButton :global(.iconExternalLink) {
+  flex-shrink: 0;
+}
+
+.qrModal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  animation: fadeIn 0.3s ease-out;
+}
+
+.qrModalContent {
+  position: relative;
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 2.5rem;
+  max-width: 400px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+  animation: slideUp 0.3s ease-out;
+}
+
+.closeButton {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: none;
+  border: none;
+  font-size: 1.75rem;
+  line-height: 1;
+  color: #64748b;
+  cursor: pointer;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+.closeButton:hover {
+  background: #f1f5f9;
+  color: #374151;
+}
+
+.qrTitle {
+  margin: 0 0 1.5rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #0f172a;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+}
+
+.qrImageContainer {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.qrImage {
+  width: 200px;
+  height: 200px;
+  max-width: 100%;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 0.5rem;
+}
+
+.qrDescription {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: #64748b;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+}
+
+[data-theme='dark'] .navbarCommunityButton {
+  color: #c7d2fe;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(129, 140, 248, 0.18) 100%);
+  border-color: rgba(129, 140, 248, 0.22);
+  box-shadow:
+    0 2px 10px rgba(79, 70, 229, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+[data-theme='dark'] .navbarCommunityButton:hover {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.26) 0%, rgba(129, 140, 248, 0.24) 100%);
+  box-shadow:
+    0 6px 18px rgba(79, 70, 229, 0.26),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+[data-theme='dark'] .qrModalContent {
+  background: #1e293b;
+  border: 1px solid #334155;
+}
+
+[data-theme='dark'] .closeButton {
+  color: #94a3b8;
+}
+
+[data-theme='dark'] .closeButton:hover {
+  background: #334155;
+  color: #f1f5f9;
+}
+
+[data-theme='dark'] .qrTitle {
+  color: #f1f5f9;
+}
+
+[data-theme='dark'] .qrImageContainer {
+  background: #334155;
+  border-color: #475569;
+}
+
+[data-theme='dark'] .qrDescription {
+  color: #94a3b8;
+}
+
+@media (max-width: 996px) {
+  .navbarCommunityButton {
+    padding: 6px 10px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 768px) {
+  .qrModalContent {
+    padding: 2rem 1.5rem;
+    max-width: 350px;
+  }
+
+  .qrImage {
+    width: 180px;
+    height: 180px;
+  }
+}
+
+@media (max-width: 480px) {
+  .qrModalContent {
+    padding: 1.5rem;
+    max-width: 320px;
+  }
+
+  .qrImage {
+    width: 160px;
+    height: 160px;
+  }
+
+  .qrTitle {
+    font-size: 1.25rem;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
