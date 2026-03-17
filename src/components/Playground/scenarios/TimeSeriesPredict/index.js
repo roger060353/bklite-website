@@ -64,6 +64,50 @@ function parseTimestamp(raw) {
   return NaN;
 }
 
+function detectSeriesFrequencySeconds(series) {
+  if (!Array.isArray(series) || series.length < 2) return null;
+
+  const gaps = [];
+  for (let i = 1; i < series.length; i++) {
+    const gap = series[i].time - series[i - 1].time;
+    if (Number.isFinite(gap) && gap > 0) {
+      gaps.push(gap);
+    }
+  }
+
+  if (!gaps.length) return null;
+
+  const counts = new Map();
+  gaps.forEach((gap) => {
+    counts.set(gap, (counts.get(gap) || 0) + 1);
+  });
+
+  return Array.from(counts.entries()).sort((a, b) => b[1] - a[1])[0][0];
+}
+
+function formatDurationLabel(totalSeconds) {
+  if (!Number.isFinite(totalSeconds) || totalSeconds <= 0) return '未知时长';
+
+  if (totalSeconds % 86400 === 0) {
+    const days = totalSeconds / 86400;
+    return `${days}天`;
+  }
+
+  if (totalSeconds % 3600 === 0) {
+    const hours = totalSeconds / 3600;
+    return `${hours}小时`;
+  }
+
+  if (totalSeconds >= 3600) {
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.round((totalSeconds % 3600) / 60);
+    return minutes ? `${hours}小时${minutes}分钟` : `${hours}小时`;
+  }
+
+  const minutes = Math.max(1, Math.round(totalSeconds / 60));
+  return `${minutes}分钟`;
+}
+
 const chartColors = {
   primary: '#1E40AF',
   primaryLight: '#3B82F6',
@@ -73,10 +117,14 @@ const chartColors = {
   surface: '#F8FAFC'
 };
 
+const minPredictionSteps = 1;
+const maxPredictionSteps = 12;
+
 // ==================== 组件 ====================
 
 export default function TimeSeriesPredict({ apiBase, loginBaseUrl, isLoggedIn, selectedModel, scenarioConfig }) {
   const [dataSource, setDataSource] = useState('sample');
+  const [selectedSteps, setSelectedSteps] = useState(minPredictionSteps);
   const [loading, setLoading] = useState(false);
   const [resultData, setResultData] = useState(null);
   const [inferenceTime, setInferenceTime] = useState(null);
@@ -93,6 +141,15 @@ export default function TimeSeriesPredict({ apiBase, loginBaseUrl, isLoggedIn, s
   const fileInputRef = useRef(null);
   const uploadChartRef = useRef(null);
   const uploadChartInstance = useRef(null);
+
+  const activeSeries = dataSource === 'upload' && uploadData?.length ? uploadData : sampleData;
+  const detectedFrequencySeconds = detectSeriesFrequencySeconds(activeSeries);
+  const frequencyLabel = detectedFrequencySeconds ? formatDurationLabel(detectedFrequencySeconds) : '5分钟';
+
+  const getPredictionTimeLabel = (steps) => {
+    const baseFrequency = detectedFrequencySeconds || 5 * 60;
+    return formatDurationLabel(baseFrequency * steps);
+  };
 
   // ==================== 图表 ====================
 
@@ -373,7 +430,7 @@ export default function TimeSeriesPredict({ apiBase, loginBaseUrl, isLoggedIn, s
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ data: payload, config: { steps: 3 } }),
+          body: JSON.stringify({ data: payload, config: { steps: selectedSteps } }),
         }
       );
 
@@ -591,6 +648,38 @@ export default function TimeSeriesPredict({ apiBase, loginBaseUrl, isLoggedIn, s
         )}
       </div>
 
+      {/* 预测时间 */}
+      <div className={styles.formGroup}>
+        <label className={styles.formLabel}>预测时间</label>
+        <div className={styles.stepsCard}>
+          <div className={styles.stepsHeader}>
+            <p className={styles.stepsHint}>拖动下方滑块可调整未来预测时长，当前每个数据点约为 {frequencyLabel}。</p>
+            <div className={styles.stepsValue}>
+              <div className={styles.stepsValueMain}>
+                <span className={styles.stepsValueLabel}>当前预测范围</span>
+                <span className={styles.stepsValueText}>{getPredictionTimeLabel(selectedSteps)}</span>
+              </div>
+            </div>
+          </div>
+          <div className={styles.stepsSliderGroup}>
+            <input
+              type="range"
+              min={minPredictionSteps}
+              max={maxPredictionSteps}
+              step={1}
+              value={selectedSteps}
+              className={styles.stepsSlider}
+              onChange={(e) => setSelectedSteps(Number(e.target.value))}
+              disabled={loading}
+            />
+            <div className={styles.stepsScale}>
+              <span className={styles.stepsScaleLabel}>{getPredictionTimeLabel(minPredictionSteps)}</span>
+              <span className={styles.stepsScaleLabel}>{getPredictionTimeLabel(maxPredictionSteps)}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* 错误提示 */}
       {formError && (
         <div className={styles.formErrorMsg}>
@@ -639,9 +728,9 @@ export default function TimeSeriesPredict({ apiBase, loginBaseUrl, isLoggedIn, s
               </span>
             </div>
             <div className={styles.resultStat}>
-              <span className={styles.resultStatLabel}>预测步数</span>
+              <span className={styles.resultStatLabel}>预测时间</span>
               <span className={styles.resultStatValue}>
-                {resultData?.metadata?.prediction_steps || resultData?.prediction?.length || 0}
+                {getPredictionTimeLabel(resultData?.metadata?.prediction_steps || selectedSteps || resultData?.prediction?.length || 0)}
               </span>
             </div>
             <div className={styles.resultStat}>
