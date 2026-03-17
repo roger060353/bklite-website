@@ -12,7 +12,7 @@ import {
   FiAlertTriangle,
 } from 'react-icons/fi';
 
-import { requireAuth, getToken } from '../../auth';
+import { requireAuth, getToken } from '@site/src/lib/playgroundAuth';
 
 import styles from './index.module.css';
 
@@ -75,7 +75,7 @@ const chartColors = {
 
 // ==================== 组件 ====================
 
-export default function TimeSeriesPredict({ apiBase, loginBaseUrl, isLoggedIn, selectedModel, scenarioConfig }) {
+export default function AnomalyDetection({ apiBase, loginBaseUrl, isLoggedIn, selectedModel, scenarioConfig }) {
   const [dataSource, setDataSource] = useState('sample');
   const [loading, setLoading] = useState(false);
   const [resultData, setResultData] = useState(null);
@@ -231,7 +231,7 @@ export default function TimeSeriesPredict({ apiBase, loginBaseUrl, isLoggedIn, s
     }
   }, [uploadData]);
 
-  // 结果图表 — 时序预测：历史实线 + 预测虚线
+  // 结果图表 — 异常检测
   useEffect(() => {
     if (resultData && resultChartRef.current) {
       if (resultChartInstance.current) {
@@ -241,19 +241,16 @@ export default function TimeSeriesPredict({ apiBase, loginBaseUrl, isLoggedIn, s
       const chart = echarts.init(resultChartRef.current);
       resultChartInstance.current = chart;
 
-      const allData = [...resultData.history, ...resultData.prediction];
-      const allValues = allData.map(d => d.value);
-      const allMin = Math.floor(Math.min(...allValues));
-      const allMax = Math.ceil(Math.max(...allValues));
-      const allPadding = Math.max(1, Math.round((allMax - allMin) * 0.1));
-      const allInterval = Math.max(1, Math.floor(allData.length / 6));
+      const anomalyData = resultData.data || [];
+      const anomalyPoints = anomalyData
+        .map((d, i) => d.isAnomaly ? { xAxis: i, yAxis: d.value, value: d.value } : null)
+        .filter(p => p !== null);
 
-      const historyValues = resultData.history.map(d => d.value);
-      const overlapPadding = new Array(Math.max(0, resultData.history.length - 1)).fill(null);
-      const overlapPrediction = [
-        resultData.history[resultData.history.length - 1]?.value ?? null,
-        ...resultData.prediction.map(d => d.value),
-      ];
+      const resultValues = anomalyData.map(d => d.value);
+      const resultMin = Math.floor(Math.min(...resultValues));
+      const resultMax = Math.ceil(Math.max(...resultValues));
+      const resultPadding = Math.max(1, Math.round((resultMax - resultMin) * 0.1));
+      const resultInterval = Math.max(1, Math.floor(anomalyData.length / 6));
 
       const option = {
         dataZoom: [
@@ -261,28 +258,28 @@ export default function TimeSeriesPredict({ apiBase, loginBaseUrl, isLoggedIn, s
         ],
         grid: { top: 48, right: 24, bottom: 40, left: 56 },
         legend: {
-          data: ['历史数据', '预测数据'],
+          data: ['时序数据', '异常点'],
           top: 8,
           textStyle: { fontSize: 12, color: chartColors.text }
         },
         xAxis: {
           type: 'category',
-          data: allData.map(d => formatTimestamp(d.time, allData.length > 1 ? allData[allData.length - 1].time - allData[0].time : 0)),
-          axisLabel: { fontSize: 11, color: chartColors.text, interval: allInterval },
+          data: anomalyData.map(d => formatTimestamp(d.time, anomalyData.length > 1 ? anomalyData[anomalyData.length - 1].time - anomalyData[0].time : 0)),
+          axisLabel: { fontSize: 11, color: chartColors.text, interval: resultInterval },
           axisLine: { lineStyle: { color: chartColors.border } },
           axisTick: { show: false }
         },
         yAxis: {
           type: 'value',
-          min: allMin - allPadding,
-          max: allMax + allPadding,
+          min: resultMin - resultPadding,
+          max: resultMax + resultPadding,
           axisLabel: { fontSize: 11, color: chartColors.text },
           splitLine: { lineStyle: { color: chartColors.border, type: 'dashed' } }
         },
         series: [
           {
-            name: '历史数据',
-            data: historyValues,
+            name: '时序数据',
+            data: anomalyData.map(d => d.value),
             type: 'line',
             smooth: true,
             symbol: 'none',
@@ -292,21 +289,26 @@ export default function TimeSeriesPredict({ apiBase, loginBaseUrl, isLoggedIn, s
                 { offset: 0, color: 'rgba(59, 130, 246, 0.25)' },
                 { offset: 1, color: 'rgba(59, 130, 246, 0.02)' }
               ])
+            },
+            markPoint: {
+              symbol: 'circle',
+              symbolSize: 16,
+              itemStyle: {
+                color: chartColors.danger,
+                borderColor: '#fff',
+                borderWidth: 2,
+                shadowColor: 'rgba(239, 68, 68, 0.5)',
+                shadowBlur: 8
+              },
+              label: { show: false },
+              data: anomalyPoints
             }
           },
           {
-            name: '预测数据',
-            data: [...overlapPadding, ...overlapPrediction],
-            type: 'line',
-            smooth: true,
-            symbol: 'none',
-            lineStyle: { color: '#F59E0B', width: 2.5, type: 'dashed' },
-            areaStyle: {
-              color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                { offset: 0, color: 'rgba(245, 158, 11, 0.18)' },
-                { offset: 1, color: 'rgba(245, 158, 11, 0.02)' }
-              ])
-            }
+            name: '异常点',
+            type: 'scatter',
+            data: [],
+            itemStyle: { color: chartColors.danger }
           }
         ],
         tooltip: {
@@ -316,15 +318,13 @@ export default function TimeSeriesPredict({ apiBase, loginBaseUrl, isLoggedIn, s
           borderWidth: 1,
           textStyle: { fontSize: 13 },
           formatter: params => {
-            const point = params[0] || params[1];
+            const point = params[0];
             if (!point) return '';
-            let html = `<strong>${point.axisValue}</strong>`;
-            params.forEach(p => {
-              if (p.value != null) {
-                const color = p.seriesName === '预测数据' ? '#F59E0B' : chartColors.primaryLight;
-                html += `<br/><span style="color:${color}">${p.seriesName}: ${p.value.toFixed(1)}</span>`;
-              }
-            });
+            const idx = point.dataIndex;
+            const d = anomalyData[idx];
+            let html = `<strong>${point.axisValue}</strong><br/>数值: ${point.value.toFixed(1)}`;
+            if (d?.anomalyProbability != null) html += `<br/>异常概率: ${(d.anomalyProbability * 100).toFixed(2)}%`;
+            if (d?.isAnomaly) html += `<br/><span style="color:#EF4444;font-weight:600">⚠ 检测到异常</span>`;
             return html;
           }
         }
@@ -373,7 +373,7 @@ export default function TimeSeriesPredict({ apiBase, loginBaseUrl, isLoggedIn, s
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ data: payload, config: { steps: 3 } }),
+          body: JSON.stringify({ data: payload, config: {} }),
         }
       );
 
@@ -382,23 +382,21 @@ export default function TimeSeriesPredict({ apiBase, loginBaseUrl, isLoggedIn, s
       }
 
       const json = await response.json();
-      // 时序预测响应格式：{ data: { success, history[], prediction[], metadata } }
-      const inner = json.data || {};
-      const history = (inner.history || []).map(item => ({
+      // 异常检测响应格式：{ data: { results[], metadata } }
+      const results = json.data?.results || [];
+      const adapted = results.map(item => ({
         time: item.timestamp,
         value: item.value,
-      }));
-      const prediction = (inner.prediction || []).map(item => ({
-        time: item.timestamp,
-        value: item.value,
+        isAnomaly: item.label === 1,
+        anomalyScore: item.anomaly_score,
+        anomalyProbability: item.anomaly_probability,
       }));
       setResultData({
-        type: 'timeseries-predict',
-        history,
-        prediction,
-        metadata: inner.metadata || {},
+        type: 'timeseries-anomaly',
+        data: adapted,
+        metadata: json.data?.metadata || {},
       });
-      setInferenceTime(inner.metadata?.execution_time_ms ?? null);
+      setInferenceTime(json.data?.metadata?.execution_time_ms ?? null);
     } catch (err) {
       console.error('推理请求失败:', err);
       setFormError(`推理失败: ${err.message}`);
@@ -627,27 +625,27 @@ export default function TimeSeriesPredict({ apiBase, loginBaseUrl, isLoggedIn, s
             </span>
             <span className={styles.resultStatus}>
               <FiCheck />
-              预测完成
+              检测完成
             </span>
           </div>
           <div className={styles.resultChart} ref={resultChartRef}></div>
           <div className={styles.resultSummary}>
             <div className={styles.resultStat}>
-              <span className={styles.resultStatLabel}>输入数据点</span>
+              <span className={styles.resultStatLabel}>数据点总数</span>
               <span className={styles.resultStatValue}>
-                {resultData?.metadata?.input_data_points || resultData?.history?.length || 0}
+                {resultData?.data?.length || 0}
               </span>
             </div>
             <div className={styles.resultStat}>
-              <span className={styles.resultStatLabel}>预测步数</span>
-              <span className={styles.resultStatValue}>
-                {resultData?.metadata?.prediction_steps || resultData?.prediction?.length || 0}
+              <span className={styles.resultStatLabel}>检测到异常</span>
+              <span className={clsx(styles.resultStatValue, styles.resultStatValueAnomaly)}>
+                {resultData?.data?.filter(d => d.isAnomaly).length || 0}
               </span>
             </div>
             <div className={styles.resultStat}>
-              <span className={styles.resultStatLabel}>预测频率</span>
+              <span className={styles.resultStatLabel}>异常占比</span>
               <span className={styles.resultStatValue}>
-                {resultData?.metadata?.input_frequency || '-'}
+                {resultData?.data?.length ? (resultData.data.filter(d => d.isAnomaly).length / resultData.data.length * 100).toFixed(2) + '%' : '0%'}
               </span>
             </div>
             <div className={styles.resultStat}>

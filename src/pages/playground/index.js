@@ -4,10 +4,10 @@ import clsx from 'clsx';
 
 import Layout from '@theme/Layout';
 
-import MLOpsTab from '@site/src/pages/playground/MLOpsTab';
-import OpsPilotTab from '@site/src/pages/playground/OpsPilotTab';
+import MLOpsTab from '@site/src/components/Playground/MLOpsTab';
+import OpsPilotTab from '@site/src/components/Playground/OpsPilotTab';
 
-import { verifyLoginCallback, hasToken } from './auth';
+import { verifyLoginCallback, hasToken } from '@site/src/lib/playgroundAuth';
 
 import styles from './index.module.css';
 

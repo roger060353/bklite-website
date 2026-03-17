@@ -6,10 +6,15 @@
 const TOKEN_COOKIE_NAME = 'bklite_token';
 const LOGIN_CODE_KEY = 'bklite_third_login_code';
 
+function isBrowser() {
+  return typeof window !== 'undefined' && typeof document !== 'undefined';
+}
+
 /**
  * 从 cookie 中获取指定名称的值
  */
 export function getCookie(name) {
+  if (typeof document === 'undefined') return null;
   const match = document.cookie.match(new RegExp('(?:^|;\\s*)' + name + '=([^;]*)'));
   return match ? decodeURIComponent(match[1]) : null;
 }
@@ -32,6 +37,7 @@ export function getToken() {
  * 生成随机 third_login_code
  */
 function generateLoginCode() {
+  if (typeof crypto === 'undefined') return '';
   const array = new Uint8Array(32);
   crypto.getRandomValues(array);
   return Array.from(array, b => b.toString(16).padStart(2, '0')).join('');
@@ -45,6 +51,8 @@ function generateLoginCode() {
  * @param {string} loginBaseUrl - 登录页地址，由调用方传入
  */
 export function redirectToLogin(loginBaseUrl) {
+  if (!isBrowser()) return;
+
   const code = generateLoginCode();
   sessionStorage.setItem(LOGIN_CODE_KEY, code);
 
@@ -61,6 +69,8 @@ export function redirectToLogin(loginBaseUrl) {
  * @returns {boolean} 验证是否通过
  */
 export function verifyLoginCallback() {
+  if (!isBrowser()) return false;
+
   const params = new URLSearchParams(window.location.search);
   const urlCode = params.get('third_login_code');
 
@@ -80,6 +90,8 @@ export function verifyLoginCallback() {
  * 清理 URL 中的认证参数，保持地址栏干净
  */
 function cleanUrlParams() {
+  if (!isBrowser()) return;
+
   const url = new URL(window.location.href);
   url.searchParams.delete('third_login_code');
   window.history.replaceState({}, '', url.pathname + url.search);

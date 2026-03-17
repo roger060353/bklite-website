@@ -1,6 +1,6 @@
 import React from 'react';
 
-import styles from './PageHeader.module.css';
+import styles from './styles.module.css';
 
 /**
  * 通用页面头部组件，用于 MLOps / OpsPilot 等 Tab 页顶部

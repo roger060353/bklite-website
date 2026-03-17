@@ -3,9 +3,9 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import clsx from 'clsx';
 import { FiClock, FiDatabase, FiMessageSquare, FiSend } from 'react-icons/fi';
 
-import PageHeader from './PageHeader';
+import PageHeader from '@site/src/components/Playground/PageHeader';
 
-import styles from './OpsPilotTab.module.css';
+import styles from './styles.module.css';
 
 // 场景配置
 const scenarios = {

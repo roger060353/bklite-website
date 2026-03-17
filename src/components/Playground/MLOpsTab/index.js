@@ -16,13 +16,13 @@ import {
   FiLock
 } from 'react-icons/fi';
 
-import { getToken, hasToken, redirectToLogin } from './auth';
-import PageHeader from './PageHeader';
-import AnomalyDetection from './scenarios/AnomalyDetection';
-import TimeSeriesPredict from './scenarios/TimeSeriesPredict';
-import ComingSoon from './scenarios/ComingSoon';
+import { getToken, hasToken, redirectToLogin } from '@site/src/lib/playgroundAuth';
+import PageHeader from '@site/src/components/Playground/PageHeader';
+import AnomalyDetection from '@site/src/components/Playground/scenarios/AnomalyDetection';
+import TimeSeriesPredict from '@site/src/components/Playground/scenarios/TimeSeriesPredict';
+import ComingSoon from '@site/src/components/Playground/scenarios/ComingSoon';
 
-import styles from './MLOpsTab.module.css';
+import styles from './styles.module.css';
 
 // 场景配置：映射后端 serving 名称
 const scenarioConfig = {
@@ -89,7 +89,7 @@ export default function MLOpsTab() {
   // 动态 serving 列表：{ [scenarioKey]: [{ id, name }] }
   const [servings, setServings] = useState({});
   const [servingsLoading, setServingsLoading] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(() => hasToken());
+  const [isLoggedIn, setIsLoggedIn] = useState(null);
 
   const modelDropdownRef = useRef(null);
   const servingsCache = useRef({});
@@ -242,7 +242,11 @@ export default function MLOpsTab() {
               {!isComingSoon && (
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>选择模型</label>
-                {!isLoggedIn ? (
+                {isLoggedIn === null ? (
+                  <div className={styles.selectTrigger} style={{ cursor: 'wait' }}>
+                    <span className={styles.selectValue}>检查登录状态中...</span>
+                  </div>
+                ) : !isLoggedIn ? (
                   <div className={styles.loginHint} onClick={() => redirectToLogin(loginBaseUrl)}>
                     <FiLock />
                     <span>请先登录后选择模型</span>
