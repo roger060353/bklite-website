@@ -769,6 +769,34 @@ python manage.py controller_package_init --os windows --pk_version $WINDOWS_SIDE
 python manage.py collector_package_init --os windows --object Telegraf --pk_version latest --file_path /apps/pkgs/collector/windows/telegraf.exe
 python manage.py collector_package_init --os windows --object Nats-Executor --pk_version latest --file_path /apps/pkgs/collector/windows/nats-executor.exe
 python manage.py installer_init --file_path /apps/pkgs/controller/windows/collector-sidecar-installer.exe
+EXPORTER_DIR="/opt/release/exporters"
+
+for filepath in "${EXPORTER_DIR}"/*; do
+    [ -f "${filepath}" ] || [ -d "${filepath}" ] || continue
+
+    filename=$(basename "${filepath}")
+
+    if [[ "${filename}" =~ ^(.+)-([0-9]+\.[0-9]+(\.[0-9]+)*)$ ]]; then
+        object="${BASH_REMATCH[1]}"
+        version="${BASH_REMATCH[2]}"
+    elif [[ "${filename}" =~ ^(.+)\.(jar|tar\.gz|tgz|zip|bin)$ ]]; then
+        object="${BASH_REMATCH[1]}"
+        version="1.0.0"
+        echo "[WARN] ${filename}: no version detected, using default ${version}"
+    else
+        echo "[SKIP] ${filename}: unable to parse, skipping"
+        continue
+    fi
+
+    echo ">>> Importing: object=${object}, version=${version}, path=${filepath}"
+    python manage.py collector_package_init \
+        --os linux \
+        --object "${object}" \
+        --pk_version "${version}" \
+        --file-path "${filepath}"
+done
+
+echo "All packages imported successfully."
 PLUGIN_INIT
 }
 
