@@ -20,6 +20,14 @@ export function getCookie(name) {
 }
 
 /**
+ * 设置 cookie
+ */
+function setCookie(name, value) {
+  if (typeof document === 'undefined') return;
+  document.cookie = `${name}=${encodeURIComponent(value)}; path=/; SameSite=Lax`;
+}
+
+/**
  * 检查是否已登录（cookie 中存在 bklite_token）
  */
 export function hasToken() {
@@ -58,9 +66,11 @@ export function redirectToLogin(loginBaseUrl) {
 
   // 回调地址：当前站点的 /playground 页面，附带 third_login_code 参数
   const callbackUrl = window.location.origin + '/playground?third_login_code=' + code;
-  const loginUrl = loginBaseUrl + '?callbackUrl=' + encodeURIComponent(callbackUrl);
+  const loginUrl = new URL(loginBaseUrl, window.location.origin);
+  loginUrl.searchParams.set('callbackUrl', callbackUrl);
+  loginUrl.searchParams.set('thirdLogin', 'true');
 
-  window.location.href = loginUrl;
+  window.location.href = loginUrl.toString();
 }
 
 /**
@@ -73,11 +83,16 @@ export function verifyLoginCallback() {
 
   const params = new URLSearchParams(window.location.search);
   const urlCode = params.get('third_login_code');
+  const token = params.get('token');
 
   if (!urlCode) return false;
 
   const storedCode = sessionStorage.getItem(LOGIN_CODE_KEY);
   const isValid = urlCode === storedCode;
+
+  if (isValid && token) {
+    setCookie(TOKEN_COOKIE_NAME, token);
+  }
 
   // 验证完毕，清理 sessionStorage 和 URL 参数
   sessionStorage.removeItem(LOGIN_CODE_KEY);
@@ -94,6 +109,7 @@ function cleanUrlParams() {
 
   const url = new URL(window.location.href);
   url.searchParams.delete('third_login_code');
+  url.searchParams.delete('token');
   window.history.replaceState({}, '', url.pathname + url.search);
 }
 
