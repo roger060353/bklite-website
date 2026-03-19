@@ -6,8 +6,8 @@ const productGroups = [
     {
         title: '经典运维',
         products: [
-            { name: '监控中心', description: '秒级监控 · 精准告警 · 稳定保障', link: '/docs/monitor/feature' },
-            { name: '日志中心', description: '快速检索 · 故障定位 · 合规留存', link: '/docs/log/feature' },
+            { name: '监控中心', description: '秒级监控 · 精准告警 · 稳定保障', link: '/docs/monitor/introduce' },
+            { name: '日志中心', description: '快速检索 · 故障定位 · 合规留存', link: '/docs/log/introduce' },
             { name: 'CMDB', description: '资产可视 · 架构清晰 · 数据可信', link: '/docs/cmdb' },
             { name: '告警中心', description: '智能降噪 · 精准分派 · 快速闭环', link: '/docs/alert' },
             { name: 'ITSM', description: '标准执行 · 透明可控 · 合规保障', link: '/docs/itsm/feature' },
@@ -17,16 +17,16 @@ const productGroups = [
     {
         title: '平台底座',
         products: [
-            { name: '控制台', description: '一站访问 · 通知聚合 · 智能推荐', link: '/docs/console' },
-            { name: '系统管理', description: '权限隔离 · 精细管控 · 全程追溯', link: '/docs/system/feature' },
-            { name: '节点管理', description: '跨云管理 · 自动部署 · 状态可视', link: '/docs/node/feature' },
+            { name: '控制台', description: '一站访问 · 通知聚合 · 智能推荐', link: '/docs/introduce' },
+            { name: '系统管理', description: '权限隔离 · 精细管控 · 全程追溯', link: '/docs/system/introduce' },
+            { name: '节点管理', description: '跨云管理 · 自动部署 · 状态可视', link: '/docs/node/introduce' },
         ]
     },
     {
         title: '智能运维',
         products: [
             { name: 'OpsPilot', description: '自主诊断 · 智能决策 · 自动修复', link: '/docs/opspilot/introduce' },
-            { name: 'MLOps', description: '数据标注 · 模型训练 · 能力发布', link: '/docs/mlops/feature' },
+            { name: 'MLOps', description: '数据标注 · 模型训练 · 能力发布', link: '/docs/mlops/introduce' },
         ]
     },
 ];
