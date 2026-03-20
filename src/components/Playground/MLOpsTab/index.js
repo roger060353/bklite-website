@@ -14,7 +14,7 @@ import {
   FiLock
 } from 'react-icons/fi';
 
-import { getToken, hasToken, redirectToLogin } from '@site/src/lib/playgroundAuth';
+import { AUTH_STATE_CHANGE_EVENT, getToken, hasToken, redirectToLogin } from '@site/src/lib/playgroundAuth';
 import AnomalyDetection from '@site/src/components/Playground/scenarios/AnomalyDetection';
 import TimeSeriesPredict from '@site/src/components/Playground/scenarios/TimeSeriesPredict';
 import ComingSoon from '@site/src/components/Playground/scenarios/ComingSoon';
@@ -108,15 +108,6 @@ export default function MLOpsTab() {
     servingsCache.current = servings;
   }, [servings]);
 
-  // 检查登录状态变化，登录后自动加载当前场景的 serving 列表
-  useEffect(() => {
-    const loggedIn = hasToken();
-    setIsLoggedIn(loggedIn);
-    if (loggedIn && selectedScenario && !scenarioConfig[selectedScenario]?.comingSoon) {
-      fetchServings(selectedScenario);
-    }
-  }, [selectedScenario]);
-
   // 从后端获取指定场景的 serving 列表
   const fetchServings = useCallback(async (scenario) => {
     const config = scenarioConfig[scenario];
@@ -165,6 +156,30 @@ export default function MLOpsTab() {
       setServingsLoading(false);
     }
   }, [apiBase]);
+
+  const syncLoginState = useCallback(() => {
+    const loggedIn = hasToken();
+    setIsLoggedIn(loggedIn);
+    if (loggedIn && selectedScenario && !scenarioConfig[selectedScenario]?.comingSoon) {
+      fetchServings(selectedScenario);
+    }
+  }, [fetchServings, selectedScenario]);
+
+  // 检查登录状态变化，登录后自动加载当前场景的 serving 列表
+  useEffect(() => {
+    syncLoginState();
+  }, [syncLoginState]);
+
+  useEffect(() => {
+    const handleAuthStateChange = () => {
+      syncLoginState();
+    };
+
+    window.addEventListener(AUTH_STATE_CHANGE_EVENT, handleAuthStateChange);
+    return () => {
+      window.removeEventListener(AUTH_STATE_CHANGE_EVENT, handleAuthStateChange);
+    };
+  }, [syncLoginState]);
 
   // 当前场景的 serving 列表
   const currentServings = servings[selectedScenario] || [];
