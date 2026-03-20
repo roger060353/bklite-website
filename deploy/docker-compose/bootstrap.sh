@@ -567,6 +567,7 @@ log "INFO" "Starting Build Process..."
 # 导出二进制文件
 log "INFO" "Exporting binaries..."
 cp -a bin/* "${PKG}/collector/linux/"
+cp -a /opt/release/linux/exporters "${PKG}/collector/linux/"
 cp -a bin/* /tmp/bin/ 2>/dev/null || log "WARNING" "Failed to update /tmp/bin. Skipping."
 cp -a "${OPT}/release/windows/fusion-collectors/bin/"* "${PKG}/collector/windows/"
 
@@ -769,7 +770,7 @@ python manage.py controller_package_init --os windows --pk_version $WINDOWS_SIDE
 python manage.py collector_package_init --os windows --object Telegraf --pk_version latest --file_path /apps/pkgs/collector/windows/telegraf.exe
 python manage.py collector_package_init --os windows --object Nats-Executor --pk_version latest --file_path /apps/pkgs/collector/windows/nats-executor.exe
 python manage.py installer_init --file_path /apps/pkgs/controller/windows/collector-sidecar-installer.exe
-EXPORTER_DIR="/opt/release/linux/exporters"
+EXPORTER_DIR="/apps/pkgs/collector/linux/exporters"
 
 for filepath in "${EXPORTER_DIR}"/*; do
     [ -f "${filepath}" ] || [ -d "${filepath}" ] || continue
@@ -793,7 +794,7 @@ for filepath in "${EXPORTER_DIR}"/*; do
         --os linux \
         --object "${object}" \
         --pk_version "${version}" \
-        --file-path "${filepath}"
+        --file_path "${filepath}"
 done
 
 echo "All packages imported successfully."
