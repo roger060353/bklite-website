@@ -18,15 +18,38 @@ import styles from './index.module.css';
 
 // ==================== 工具函数 ====================
 
-function formatTimestamp(ts, spanSeconds) {
+function formatTimestamp(ts, spanSeconds, frequencySeconds, mode = 'axis') {
   const d = new Date(ts * 1000);
   if (spanSeconds == null) spanSeconds = 0;
+  if (frequencySeconds == null) frequencySeconds = 0;
   const pad = (n) => String(n).padStart(2, '0');
   const yyyy = d.getFullYear();
   const MM = pad(d.getMonth() + 1);
   const dd = pad(d.getDate());
   const hh = pad(d.getHours());
   const mm = pad(d.getMinutes());
+  const ss = pad(d.getSeconds());
+
+  if (mode === 'tooltip') {
+    if (frequencySeconds >= 365 * 86400) return `${yyyy}-${MM}`;
+    if (frequencySeconds >= 86400) return `${yyyy}-${MM}-${dd}`;
+    if (frequencySeconds >= 3600) return `${yyyy}-${MM}-${dd} ${hh}:00`;
+    if (frequencySeconds >= 60) return `${yyyy}-${MM}-${dd} ${hh}:${mm}`;
+    return `${yyyy}-${MM}-${dd} ${hh}:${mm}:${ss}`;
+  }
+
+  if (frequencySeconds >= 365 * 86400) return `${yyyy}-${MM}`;
+  if (frequencySeconds >= 86400) return `${MM}-${dd}`;
+  if (frequencySeconds >= 3600) {
+    return spanSeconds > 2 * 86400 ? `${MM}-${dd} ${hh}:00` : `${hh}:00`;
+  }
+  if (frequencySeconds >= 60) {
+    return spanSeconds > 86400 ? `${MM}-${dd} ${hh}:${mm}` : `${hh}:${mm}`;
+  }
+  if (frequencySeconds > 0) {
+    return spanSeconds > 3600 ? `${hh}:${mm}:${ss}` : `${mm}:${ss}`;
+  }
+
   if (spanSeconds > 365 * 86400) return `${yyyy}-${MM}`;
   if (spanSeconds > 7 * 86400) return `${MM}-${dd}`;
   if (spanSeconds > 86400) return `${MM}-${dd} ${hh}:${mm}`;
@@ -145,6 +168,8 @@ export default function TimeSeriesPredict({ apiBase, loginBaseUrl, isLoggedIn, s
   const activeSeries = dataSource === 'upload' && uploadData?.length ? uploadData : sampleData;
   const detectedFrequencySeconds = detectSeriesFrequencySeconds(activeSeries);
   const frequencyLabel = detectedFrequencySeconds ? formatDurationLabel(detectedFrequencySeconds) : '5分钟';
+  const resultSeries = resultData ? [...resultData.history, ...resultData.prediction] : null;
+  const resultFrequencySeconds = detectSeriesFrequencySeconds(resultSeries) || detectedFrequencySeconds;
 
   const getPredictionTimeLabel = (steps) => {
     const baseFrequency = detectedFrequencySeconds || 5 * 60;
@@ -165,6 +190,8 @@ export default function TimeSeriesPredict({ apiBase, loginBaseUrl, isLoggedIn, s
 
       const data = generateSampleData();
       setSampleData(data);
+      const sampleSpanSeconds = data.length > 1 ? data[data.length - 1].time - data[0].time : 0;
+      const sampleFrequencySeconds = 5 * 60;
 
       const option = {
         dataZoom: [
@@ -173,8 +200,13 @@ export default function TimeSeriesPredict({ apiBase, loginBaseUrl, isLoggedIn, s
         grid: { top: 24, right: 24, bottom: 32, left: 56 },
         xAxis: {
           type: 'category',
-          data: data.map(d => formatTimestamp(d.time, data.length > 1 ? data[data.length - 1].time - data[0].time : 0)),
-          axisLabel: { fontSize: 11, color: chartColors.text, interval: 47 },
+          data: data.map(d => d.time),
+          axisLabel: {
+            fontSize: 11,
+            color: chartColors.text,
+            interval: 47,
+            formatter: value => formatTimestamp(Number(value), sampleSpanSeconds, sampleFrequencySeconds)
+          },
           axisLine: { lineStyle: { color: chartColors.border } },
           axisTick: { show: false }
         },
@@ -204,7 +236,7 @@ export default function TimeSeriesPredict({ apiBase, loginBaseUrl, isLoggedIn, s
           borderColor: chartColors.border,
           borderWidth: 1,
           textStyle: { color: chartColors.primary, fontSize: 13 },
-          formatter: params => `<strong>${params[0].axisValue}</strong><br/>CPU: ${params[0].value.toFixed(1)}%`
+          formatter: params => `<strong>${formatTimestamp(Number(params[0].axisValue), sampleSpanSeconds, sampleFrequencySeconds, 'tooltip')}</strong><br/>CPU: ${params[0].value.toFixed(1)}%`
         }
       };
 
@@ -231,6 +263,7 @@ export default function TimeSeriesPredict({ apiBase, loginBaseUrl, isLoggedIn, s
 
       const interval = Math.max(1, Math.floor(uploadData.length / 6));
       const values = uploadData.map(d => d.value);
+      const uploadSpanSeconds = uploadData.length > 1 ? uploadData[uploadData.length - 1].time - uploadData[0].time : 0;
       const minVal = Math.floor(Math.min(...values));
       const maxVal = Math.ceil(Math.max(...values));
       const padding = Math.max(1, Math.round((maxVal - minVal) * 0.1));
@@ -242,8 +275,13 @@ export default function TimeSeriesPredict({ apiBase, loginBaseUrl, isLoggedIn, s
         grid: { top: 24, right: 24, bottom: 32, left: 56 },
         xAxis: {
           type: 'category',
-          data: uploadData.map(d => formatTimestamp(d.time, uploadData.length > 1 ? uploadData[uploadData.length - 1].time - uploadData[0].time : 0)),
-          axisLabel: { fontSize: 11, color: chartColors.text, interval },
+          data: uploadData.map(d => d.time),
+          axisLabel: {
+            fontSize: 11,
+            color: chartColors.text,
+            interval,
+            formatter: value => formatTimestamp(Number(value), uploadSpanSeconds, detectedFrequencySeconds)
+          },
           axisLine: { lineStyle: { color: chartColors.border } },
           axisTick: { show: false }
         },
@@ -273,7 +311,7 @@ export default function TimeSeriesPredict({ apiBase, loginBaseUrl, isLoggedIn, s
           borderColor: chartColors.border,
           borderWidth: 1,
           textStyle: { color: chartColors.primary, fontSize: 13 },
-          formatter: params => `<strong>${params[0].axisValue}</strong><br/>数值: ${params[0].value}`
+          formatter: params => `<strong>${formatTimestamp(Number(params[0].axisValue), uploadSpanSeconds, detectedFrequencySeconds, 'tooltip')}</strong><br/>数值: ${params[0].value}`
         }
       };
 
@@ -304,6 +342,8 @@ export default function TimeSeriesPredict({ apiBase, loginBaseUrl, isLoggedIn, s
       const allMax = Math.ceil(Math.max(...allValues));
       const allPadding = Math.max(1, Math.round((allMax - allMin) * 0.1));
       const allInterval = Math.max(1, Math.floor(allData.length / 6));
+      const allSpanSeconds = allData.length > 1 ? allData[allData.length - 1].time - allData[0].time : 0;
+      const effectiveResultFrequencySeconds = resultFrequencySeconds || detectSeriesFrequencySeconds(allData);
 
       const historyValues = resultData.history.map(d => d.value);
       const overlapPadding = new Array(Math.max(0, resultData.history.length - 1)).fill(null);
@@ -324,8 +364,13 @@ export default function TimeSeriesPredict({ apiBase, loginBaseUrl, isLoggedIn, s
         },
         xAxis: {
           type: 'category',
-          data: allData.map(d => formatTimestamp(d.time, allData.length > 1 ? allData[allData.length - 1].time - allData[0].time : 0)),
-          axisLabel: { fontSize: 11, color: chartColors.text, interval: allInterval },
+          data: allData.map(d => d.time),
+          axisLabel: {
+            fontSize: 11,
+            color: chartColors.text,
+            interval: allInterval,
+            formatter: value => formatTimestamp(Number(value), allSpanSeconds, effectiveResultFrequencySeconds)
+          },
           axisLine: { lineStyle: { color: chartColors.border } },
           axisTick: { show: false }
         },
@@ -375,7 +420,7 @@ export default function TimeSeriesPredict({ apiBase, loginBaseUrl, isLoggedIn, s
           formatter: params => {
             const point = params[0] || params[1];
             if (!point) return '';
-            let html = `<strong>${point.axisValue}</strong>`;
+            let html = `<strong>${formatTimestamp(Number(point.axisValue), allSpanSeconds, effectiveResultFrequencySeconds, 'tooltip')}</strong>`;
             params.forEach(p => {
               if (p.value != null) {
                 const color = p.seriesName === '预测数据' ? '#F59E0B' : chartColors.primaryLight;
@@ -423,7 +468,7 @@ export default function TimeSeriesPredict({ apiBase, loginBaseUrl, isLoggedIn, s
       const token = getToken();
 
       const response = await fetch(
-        `${apiBase}/${scenarioConfig.servingName}/${selectedModel}/predict/`,
+        `${apiBase}/predict/${scenarioConfig.algorithmType}/${selectedModel}`,
         {
           method: 'POST',
           headers: {

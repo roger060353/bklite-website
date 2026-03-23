@@ -5,6 +5,7 @@
 
 const TOKEN_COOKIE_NAME = 'bklite_token';
 const LOGIN_CODE_KEY = 'bklite_third_login_code';
+export const AUTH_STATE_CHANGE_EVENT = 'bklite-auth-state-change';
 
 function isBrowser() {
   return typeof window !== 'undefined' && typeof document !== 'undefined';
@@ -25,6 +26,11 @@ export function getCookie(name) {
 function setCookie(name, value) {
   if (typeof document === 'undefined') return;
   document.cookie = `${name}=${encodeURIComponent(value)}; path=/; SameSite=Lax`;
+}
+
+function notifyAuthStateChange() {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(new CustomEvent(AUTH_STATE_CHANGE_EVENT));
 }
 
 /**
@@ -92,6 +98,7 @@ export function verifyLoginCallback() {
 
   if (isValid && token) {
     setCookie(TOKEN_COOKIE_NAME, token);
+    notifyAuthStateChange();
   }
 
   // 验证完毕，清理 sessionStorage 和 URL 参数

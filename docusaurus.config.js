@@ -20,7 +20,7 @@ const config = {
   onBrokenMarkdownLinks: 'warn',
 
   customFields: {
-    apiBaseUrl: 'https://bklite.canway.net/api/v1/mlops',
+    apiBaseUrl: 'https://bklite.canway.net/api/mlops',
     loginBaseUrl: 'https://bklite.canway.net/auth/signin',
   },
 

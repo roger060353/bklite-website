@@ -14,7 +14,7 @@ import {
   FiLock
 } from 'react-icons/fi';
 
-import { getToken, hasToken, redirectToLogin } from '@site/src/lib/playgroundAuth';
+import { AUTH_STATE_CHANGE_EVENT, getToken, hasToken, redirectToLogin } from '@site/src/lib/playgroundAuth';
 import AnomalyDetection from '@site/src/components/Playground/scenarios/AnomalyDetection';
 import TimeSeriesPredict from '@site/src/components/Playground/scenarios/TimeSeriesPredict';
 import ComingSoon from '@site/src/components/Playground/scenarios/ComingSoon';
@@ -28,7 +28,7 @@ const scenarioConfig = {
     description: '识别时间序列中的异常波动，帮助快速发现异常峰值、突增或突降。',
     guide: '适合监控指标与资源使用率数据，可直接使用示例数据或上传自己的时间序列进行验证。',
     icon: FiActivity,
-    type: 'timeseries-anomaly',
+    algorithmType: 'anomaly_detection',
     servingName: 'anomaly_detection_servings'
   },
   'time-series': {
@@ -36,7 +36,7 @@ const scenarioConfig = {
     description: '基于历史趋势预测未来一段时间的数据变化，适合容量与负载趋势预估。',
     guide: '选择模型后可先用示例数据体验，再通过上传自己的指标数据验证预测效果。',
     icon: FiTrendingUp,
-    type: 'timeseries-predict',
+    algorithmType: 'timeseries_predict',
     servingName: 'timeseries_predict_servings'
   },
   'log-analysis': {
@@ -44,7 +44,7 @@ const scenarioConfig = {
     description: '对日志内容进行聚类与归类，帮助识别相似问题和异常日志模式。',
     guide: '适合批量日志理解与问题归类场景，后续将开放在线体验能力。',
     icon: FiFileText,
-    type: 'log-clustering',
+    algorithmType: 'log_clustering',
     servingName: 'log_clustering_servings',
     comingSoon: true
   },
@@ -53,7 +53,7 @@ const scenarioConfig = {
     description: '对文本内容进行自动分类，适合工单、告警说明和文本标签场景。',
     guide: '适合标准化文本归类场景，后续将开放模型体验与示例数据流程。',
     icon: FiType,
-    type: 'text-classification',
+    algorithmType: 'classification',
     servingName: 'classification_servings',
     comingSoon: true
   },
@@ -62,7 +62,7 @@ const scenarioConfig = {
     description: '识别图片所属类别，适合标准化图像识别与自动归类任务。',
     guide: '适合单目标图像分类场景，后续将提供图片上传与推理体验。',
     icon: FiImage,
-    type: 'image-classification',
+    algorithmType: 'image_classification',
     servingName: 'image_classification_servings',
     comingSoon: true
   },
@@ -71,7 +71,7 @@ const scenarioConfig = {
     description: '检测图像中的目标位置与类别，适合定位与识别并存的视觉任务。',
     guide: '适合图像中多目标定位场景，后续将开放示例图片与检测结果展示。',
     icon: FiTarget,
-    type: 'object-detection',
+    algorithmType: 'object_detection',
     servingName: 'object_detection_servings',
     comingSoon: true
   }
@@ -108,15 +108,6 @@ export default function MLOpsTab() {
     servingsCache.current = servings;
   }, [servings]);
 
-  // 检查登录状态变化，登录后自动加载当前场景的 serving 列表
-  useEffect(() => {
-    const loggedIn = hasToken();
-    setIsLoggedIn(loggedIn);
-    if (loggedIn && selectedScenario && !scenarioConfig[selectedScenario]?.comingSoon) {
-      fetchServings(selectedScenario);
-    }
-  }, [selectedScenario]);
-
   // 从后端获取指定场景的 serving 列表
   const fetchServings = useCallback(async (scenario) => {
     const config = scenarioConfig[scenario];
@@ -134,7 +125,7 @@ export default function MLOpsTab() {
     try {
       const token = getToken();
       const response = await fetch(
-        `${apiBase}/${config.servingName}/`,
+        `${apiBase}/servings/${config.algorithmType}`,
         {
           method: 'GET',
           headers: {
@@ -165,6 +156,30 @@ export default function MLOpsTab() {
       setServingsLoading(false);
     }
   }, [apiBase]);
+
+  const syncLoginState = useCallback(() => {
+    const loggedIn = hasToken();
+    setIsLoggedIn(loggedIn);
+    if (loggedIn && selectedScenario && !scenarioConfig[selectedScenario]?.comingSoon) {
+      fetchServings(selectedScenario);
+    }
+  }, [fetchServings, selectedScenario]);
+
+  // 检查登录状态变化，登录后自动加载当前场景的 serving 列表
+  useEffect(() => {
+    syncLoginState();
+  }, [syncLoginState]);
+
+  useEffect(() => {
+    const handleAuthStateChange = () => {
+      syncLoginState();
+    };
+
+    window.addEventListener(AUTH_STATE_CHANGE_EVENT, handleAuthStateChange);
+    return () => {
+      window.removeEventListener(AUTH_STATE_CHANGE_EVENT, handleAuthStateChange);
+    };
+  }, [syncLoginState]);
 
   // 当前场景的 serving 列表
   const currentServings = servings[selectedScenario] || [];

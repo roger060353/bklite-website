@@ -18,19 +18,63 @@ import styles from './index.module.css';
 
 // ==================== 工具函数 ====================
 
-function formatTimestamp(ts, spanSeconds) {
+function formatTimestamp(ts, spanSeconds, frequencySeconds, mode = 'axis') {
   const d = new Date(ts * 1000);
   if (spanSeconds == null) spanSeconds = 0;
+  if (frequencySeconds == null) frequencySeconds = 0;
   const pad = (n) => String(n).padStart(2, '0');
   const yyyy = d.getFullYear();
   const MM = pad(d.getMonth() + 1);
   const dd = pad(d.getDate());
   const hh = pad(d.getHours());
   const mm = pad(d.getMinutes());
+  const ss = pad(d.getSeconds());
+
+  if (mode === 'tooltip') {
+    if (frequencySeconds >= 365 * 86400) return `${yyyy}-${MM}`;
+    if (frequencySeconds >= 86400) return `${yyyy}-${MM}-${dd}`;
+    if (frequencySeconds >= 3600) return `${yyyy}-${MM}-${dd} ${hh}:00`;
+    if (frequencySeconds >= 60) return `${yyyy}-${MM}-${dd} ${hh}:${mm}`;
+    return `${yyyy}-${MM}-${dd} ${hh}:${mm}:${ss}`;
+  }
+
+  if (frequencySeconds >= 365 * 86400) return `${yyyy}-${MM}`;
+  if (frequencySeconds >= 86400) return `${MM}-${dd}`;
+  if (frequencySeconds >= 3600) {
+    return spanSeconds > 2 * 86400 ? `${MM}-${dd} ${hh}:00` : `${hh}:00`;
+  }
+  if (frequencySeconds >= 60) {
+    return spanSeconds > 86400 ? `${MM}-${dd} ${hh}:${mm}` : `${hh}:${mm}`;
+  }
+  if (frequencySeconds > 0) {
+    return spanSeconds > 3600 ? `${hh}:${mm}:${ss}` : `${mm}:${ss}`;
+  }
+
   if (spanSeconds > 365 * 86400) return `${yyyy}-${MM}`;
   if (spanSeconds > 7 * 86400) return `${MM}-${dd}`;
   if (spanSeconds > 86400) return `${MM}-${dd} ${hh}:${mm}`;
   return `${hh}:${mm}`;
+}
+
+function detectSeriesFrequencySeconds(series) {
+  if (!Array.isArray(series) || series.length < 2) return null;
+
+  const gaps = [];
+  for (let i = 1; i < series.length; i++) {
+    const gap = series[i].time - series[i - 1].time;
+    if (Number.isFinite(gap) && gap > 0) {
+      gaps.push(gap);
+    }
+  }
+
+  if (!gaps.length) return null;
+
+  const counts = new Map();
+  gaps.forEach((gap) => {
+    counts.set(gap, (counts.get(gap) || 0) + 1);
+  });
+
+  return Array.from(counts.entries()).sort((a, b) => b[1] - a[1])[0][0];
 }
 
 function generateSampleData() {
@@ -94,6 +138,10 @@ export default function AnomalyDetection({ apiBase, loginBaseUrl, isLoggedIn, se
   const uploadChartRef = useRef(null);
   const uploadChartInstance = useRef(null);
 
+  const activeSeries = dataSource === 'upload' && uploadData?.length ? uploadData : sampleData;
+  const detectedFrequencySeconds = detectSeriesFrequencySeconds(activeSeries);
+  const resultFrequencySeconds = detectSeriesFrequencySeconds(resultData?.data);
+
   // ==================== 图表 ====================
 
   // 示例数据图表
@@ -108,6 +156,8 @@ export default function AnomalyDetection({ apiBase, loginBaseUrl, isLoggedIn, se
 
       const data = generateSampleData();
       setSampleData(data);
+      const sampleSpanSeconds = data.length > 1 ? data[data.length - 1].time - data[0].time : 0;
+      const sampleFrequencySeconds = 5 * 60;
 
       const option = {
         dataZoom: [
@@ -116,8 +166,13 @@ export default function AnomalyDetection({ apiBase, loginBaseUrl, isLoggedIn, se
         grid: { top: 24, right: 24, bottom: 32, left: 56 },
         xAxis: {
           type: 'category',
-          data: data.map(d => formatTimestamp(d.time, data.length > 1 ? data[data.length - 1].time - data[0].time : 0)),
-          axisLabel: { fontSize: 11, color: chartColors.text, interval: 47 },
+          data: data.map(d => d.time),
+          axisLabel: {
+            fontSize: 11,
+            color: chartColors.text,
+            interval: 47,
+            formatter: value => formatTimestamp(Number(value), sampleSpanSeconds, sampleFrequencySeconds)
+          },
           axisLine: { lineStyle: { color: chartColors.border } },
           axisTick: { show: false }
         },
@@ -147,7 +202,7 @@ export default function AnomalyDetection({ apiBase, loginBaseUrl, isLoggedIn, se
           borderColor: chartColors.border,
           borderWidth: 1,
           textStyle: { color: chartColors.primary, fontSize: 13 },
-          formatter: params => `<strong>${params[0].axisValue}</strong><br/>CPU: ${params[0].value.toFixed(1)}%`
+          formatter: params => `<strong>${formatTimestamp(Number(params[0].axisValue), sampleSpanSeconds, sampleFrequencySeconds, 'tooltip')}</strong><br/>CPU: ${params[0].value.toFixed(1)}%`
         }
       };
 
@@ -173,6 +228,7 @@ export default function AnomalyDetection({ apiBase, loginBaseUrl, isLoggedIn, se
       uploadChartInstance.current = chart;
 
       const interval = Math.max(1, Math.floor(uploadData.length / 6));
+      const uploadSpanSeconds = uploadData.length > 1 ? uploadData[uploadData.length - 1].time - uploadData[0].time : 0;
       const values = uploadData.map(d => d.value);
       const minVal = Math.floor(Math.min(...values));
       const maxVal = Math.ceil(Math.max(...values));
@@ -185,8 +241,13 @@ export default function AnomalyDetection({ apiBase, loginBaseUrl, isLoggedIn, se
         grid: { top: 24, right: 24, bottom: 32, left: 56 },
         xAxis: {
           type: 'category',
-          data: uploadData.map(d => formatTimestamp(d.time, uploadData.length > 1 ? uploadData[uploadData.length - 1].time - uploadData[0].time : 0)),
-          axisLabel: { fontSize: 11, color: chartColors.text, interval },
+          data: uploadData.map(d => d.time),
+          axisLabel: {
+            fontSize: 11,
+            color: chartColors.text,
+            interval,
+            formatter: value => formatTimestamp(Number(value), uploadSpanSeconds, detectedFrequencySeconds)
+          },
           axisLine: { lineStyle: { color: chartColors.border } },
           axisTick: { show: false }
         },
@@ -216,7 +277,7 @@ export default function AnomalyDetection({ apiBase, loginBaseUrl, isLoggedIn, se
           borderColor: chartColors.border,
           borderWidth: 1,
           textStyle: { color: chartColors.primary, fontSize: 13 },
-          formatter: params => `<strong>${params[0].axisValue}</strong><br/>数值: ${params[0].value}`
+          formatter: params => `<strong>${formatTimestamp(Number(params[0].axisValue), uploadSpanSeconds, detectedFrequencySeconds, 'tooltip')}</strong><br/>数值: ${params[0].value}`
         }
       };
 
@@ -251,6 +312,8 @@ export default function AnomalyDetection({ apiBase, loginBaseUrl, isLoggedIn, se
       const resultMax = Math.ceil(Math.max(...resultValues));
       const resultPadding = Math.max(1, Math.round((resultMax - resultMin) * 0.1));
       const resultInterval = Math.max(1, Math.floor(anomalyData.length / 6));
+      const resultSpanSeconds = anomalyData.length > 1 ? anomalyData[anomalyData.length - 1].time - anomalyData[0].time : 0;
+      const effectiveResultFrequencySeconds = resultFrequencySeconds || detectedFrequencySeconds;
 
       const option = {
         dataZoom: [
@@ -264,8 +327,13 @@ export default function AnomalyDetection({ apiBase, loginBaseUrl, isLoggedIn, se
         },
         xAxis: {
           type: 'category',
-          data: anomalyData.map(d => formatTimestamp(d.time, anomalyData.length > 1 ? anomalyData[anomalyData.length - 1].time - anomalyData[0].time : 0)),
-          axisLabel: { fontSize: 11, color: chartColors.text, interval: resultInterval },
+          data: anomalyData.map(d => d.time),
+          axisLabel: {
+            fontSize: 11,
+            color: chartColors.text,
+            interval: resultInterval,
+            formatter: value => formatTimestamp(Number(value), resultSpanSeconds, effectiveResultFrequencySeconds)
+          },
           axisLine: { lineStyle: { color: chartColors.border } },
           axisTick: { show: false }
         },
@@ -322,7 +390,7 @@ export default function AnomalyDetection({ apiBase, loginBaseUrl, isLoggedIn, se
             if (!point) return '';
             const idx = point.dataIndex;
             const d = anomalyData[idx];
-            let html = `<strong>${point.axisValue}</strong><br/>数值: ${point.value.toFixed(1)}`;
+            let html = `<strong>${formatTimestamp(Number(point.axisValue), resultSpanSeconds, effectiveResultFrequencySeconds, 'tooltip')}</strong><br/>数值: ${point.value.toFixed(1)}`;
             if (d?.anomalyProbability != null) html += `<br/>异常概率: ${(d.anomalyProbability * 100).toFixed(2)}%`;
             if (d?.isAnomaly) html += `<br/><span style="color:#EF4444;font-weight:600">⚠ 检测到异常</span>`;
             return html;
@@ -366,7 +434,7 @@ export default function AnomalyDetection({ apiBase, loginBaseUrl, isLoggedIn, se
       const token = getToken();
 
       const response = await fetch(
-        `${apiBase}/${scenarioConfig.servingName}/${selectedModel}/predict/`,
+        `${apiBase}/predict/${scenarioConfig.algorithmType}/${selectedModel}`,
         {
           method: 'POST',
           headers: {
