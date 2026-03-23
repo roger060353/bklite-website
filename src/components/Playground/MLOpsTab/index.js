@@ -307,19 +307,44 @@ export default function MLOpsTab() {
                       </ul>
                     )}
                   </div>
-                )}
+              )}
               </div>
               )}
 
               {/* 场景组件 */}
               {ScenarioComponent && (
-                <ScenarioComponent
-                  apiBase={apiBase}
-                  loginBaseUrl={loginBaseUrl}
-                  isLoggedIn={isLoggedIn}
-                  selectedModel={selectedModel}
-                  scenarioConfig={scenarioConfig[selectedScenario]}
-                />
+                <div className={clsx(styles.lockedContent, isLoggedIn === false && styles.lockedContentActive)}>
+                  <div className={styles.lockedContentInner}>
+                    <ScenarioComponent
+                      apiBase={apiBase}
+                      loginBaseUrl={loginBaseUrl}
+                      isLoggedIn={isLoggedIn}
+                      selectedModel={selectedModel}
+                      scenarioConfig={scenarioConfig[selectedScenario]}
+                    />
+                  </div>
+
+                  {isLoggedIn === false && !isComingSoon && (
+                    <div className={styles.lockedOverlay}>
+                      <div className={styles.lockedOverlayCard}>
+                        <div className={styles.lockedOverlayIcon}>
+                          <FiLock />
+                        </div>
+                        <div className={styles.lockedOverlayText}>
+                          <strong>登录后解锁模型体验</strong>
+                          <span>选择模型后可使用示例数据、上传数据并开始在线推理。</span>
+                        </div>
+                        <button
+                          type="button"
+                          className={styles.lockedOverlayButton}
+                          onClick={() => redirectToLogin(loginBaseUrl)}
+                        >
+                          立即登录
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               )}
             </div>
           </div>
