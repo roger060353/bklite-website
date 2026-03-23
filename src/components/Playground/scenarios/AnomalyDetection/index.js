@@ -434,7 +434,7 @@ export default function AnomalyDetection({ apiBase, loginBaseUrl, isLoggedIn, se
       const token = getToken();
 
       const response = await fetch(
-        `${apiBase}/${scenarioConfig.servingName}/${selectedModel}/predict/`,
+        `${apiBase}/predict/${scenarioConfig.algorithmType}/${selectedModel}`,
         {
           method: 'POST',
           headers: {
