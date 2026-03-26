@@ -2,571 +2,69 @@
 .opsPilotTab {
   background-color: var(--color-background);
   color: var(--color-text-primary);
-  line-height: 1.6;
-  font-size: 15px;
-  -webkit-font-smoothing: antialiased;
+  min-height: calc(100vh - 60px);
 }
 
-/* ==================== Page Header ==================== */
-.pageHeader {
-  background: linear-gradient(180deg, var(--color-surface) 0%, var(--color-background) 100%);
-  border-bottom: 1px solid var(--color-border);
-  padding: 32px 24px;
-}
-
-.pageHeaderInner {
+.placeholderWrap {
   max-width: 1440px;
   margin: 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  padding: 48px 24px 64px;
 }
 
-.pageHeaderContent h1 {
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: var(--color-text-primary);
-  letter-spacing: -0.5px;
-  margin-bottom: 0.5rem;
-}
-
-.pageHeaderContent p {
-  color: var(--color-text-secondary);
-  font-size: 15px;
-  margin-top: 4px;
-  margin-bottom: 0;
-}
-
-/* ==================== Content Wrapper ==================== */
-.contentWrapper {
-  flex: 1;
-  display: flex;
-  max-width: 1440px;
-  margin: 0 auto;
-  width: 100%;
-}
-
-/* ==================== Sidebar ==================== */
-.sidebar {
-  width: 280px;
-  background: var(--color-surface);
-  border-right: 1px solid var(--color-border);
-  display: flex;
-  flex-direction: column;
-  flex-shrink: 0;
-}
-
-.sidebarHeader {
-  padding: 20px;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.sidebarHeader h2 {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--color-text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin: 0;
-}
-
-.scenarioList {
-  flex: 1;
-  overflow-y: auto;
-  padding: 12px;
-}
-
-.scenarioItem {
-  display: flex;
-  align-items: center;
-  padding: 14px 16px;
-  cursor: pointer;
-  transition: all var(--transition-fast);
-  gap: 14px;
-  border-radius: 12px;
-  margin-bottom: 6px;
-  border: 1px solid transparent;
-}
-
-.scenarioItem:hover {
-  background-color: var(--color-border-light);
-}
-
-.scenarioItem.selected {
-  background: linear-gradient(135deg, rgba(30, 64, 175, 0.08) 0%, rgba(59, 130, 246, 0.08) 100%);
-  border-color: rgba(30, 64, 175, 0.2);
-}
-
-.scenarioItemIcon {
-  width: 44px;
-  height: 44px;
-  background: var(--color-border-light);
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  transition: all var(--transition-fast);
-}
-
-.scenarioItemIcon svg {
-  width: 22px;
-  height: 22px;
-  color: var(--color-text-secondary);
-  transition: all var(--transition-fast);
-}
-
-.scenarioItem.selected .scenarioItemIcon {
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
-  box-shadow: var(--shadow-md);
-}
-
-.scenarioItem.selected .scenarioItemIcon svg {
-  color: white;
-}
-
-.scenarioItemInfo {
-  flex: 1;
-  min-width: 0;
-}
-
-.scenarioItemName {
-  font-weight: 600;
-  font-size: 14px;
-  color: var(--color-text-primary);
-  transition: all var(--transition-fast);
-}
-
-.scenarioItem.selected .scenarioItemName {
-  color: var(--color-primary);
-}
-
-.scenarioItemDesc {
-  font-size: 12px;
-  color: var(--color-text-muted);
-  margin-top: 2px;
-}
-
-/* ==================== Main Content ==================== */
-.mainContent {
-  flex: 1;
-  padding: 24px 32px;
-  background: var(--color-background);
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-}
-
-/* ==================== Chat Card ==================== */
-.chatCard {
-  background: var(--color-surface);
+.placeholderCard {
+  min-height: 520px;
   border: 1px solid var(--color-border);
-  border-radius: 16px;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  max-width: 900px;
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at top, rgba(59, 130, 246, 0.08), transparent 36%),
+    var(--color-surface);
   box-shadow: var(--shadow-sm);
-  min-height: 600px;
-}
-
-.chatHeader {
-  padding: 20px 24px;
-  border-bottom: 1px solid var(--color-border);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.chatHeaderLeft h2 {
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--color-text-primary);
-  margin: 0;
-}
-
-.chatHeaderLeft p {
-  font-size: 14px;
-  color: var(--color-text-secondary);
-  margin-top: 2px;
-  margin-bottom: 0;
-}
-
-.chatHeaderStatus {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  background: rgba(16, 185, 129, 0.1);
-  color: var(--color-success);
-  border-radius: 20px;
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.chatHeaderStatus svg {
-  width: 14px;
-  height: 14px;
-}
-
-/* ==================== Chat Messages ==================== */
-.chatMessages {
-  flex: 1;
-  overflow-y: auto;
-  padding: 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.chatMessage {
-  display: flex;
-  gap: 12px;
-  max-width: 80%;
-}
-
-.chatMessageUser {
-  align-self: flex-end;
-  flex-direction: row-reverse;
-}
-
-.chatMessageAssistant {
-  align-self: flex-start;
-}
-
-.chatMessageAvatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.chatMessageUser .chatMessageAvatar {
-  background: linear-gradient(135deg, var(--color-cta) 0%, var(--color-cta-hover) 100%);
-  color: white;
-}
-
-.chatMessageAssistant .chatMessageAvatar {
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
-  color: white;
-}
-
-.chatMessageContent {
-  padding: 12px 16px;
-  border-radius: 12px;
-  font-size: 14px;
-  line-height: 1.6;
-}
-
-.chatMessageUser .chatMessageContent {
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
-  color: white;
-  border-bottom-right-radius: 4px;
-}
-
-.chatMessageAssistant .chatMessageContent {
-  background: var(--color-border-light);
-  color: var(--color-text-primary);
-  border-bottom-left-radius: 4px;
-}
-
-/* ==================== Empty State ==================== */
-.chatEmpty {
-  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
-  color: var(--color-text-muted);
+  padding: 48px 24px;
 }
 
-.chatEmptyIcon {
-  width: 64px;
-  height: 64px;
-  background: var(--color-border-light);
-  border-radius: 16px;
-  display: flex;
+.placeholderBadge {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 16px;
-}
-
-.chatEmptyIcon svg {
-  width: 32px;
-  height: 32px;
-  color: var(--color-text-muted);
-}
-
-.chatEmpty h3 {
-  font-size: 16px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(30, 64, 175, 0.08);
+  color: var(--color-primary);
+  font-size: 13px;
   font-weight: 600;
-  color: var(--color-text-secondary);
-  margin-bottom: 4px;
-}
-
-.chatEmpty p {
-  font-size: 14px;
   margin-bottom: 20px;
 }
 
-/* ==================== Quick Questions ==================== */
-.quickQuestions {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  width: 100%;
-  max-width: 400px;
-  margin-top: 8px;
-}
-
-.quickQuestion {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 16px;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 10px;
-  cursor: pointer;
-  transition: all var(--transition-fast);
-  text-align: left;
-  font-size: 14px;
+.placeholderTitle {
+  margin: 0;
+  font-size: clamp(32px, 3vw, 44px);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
   color: var(--color-text-primary);
-  font-family: var(--font-sans);
 }
 
-.quickQuestion:hover {
-  border-color: var(--color-primary-light);
-  background: linear-gradient(135deg, rgba(30, 64, 175, 0.05) 0%, rgba(59, 130, 246, 0.05) 100%);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-sm);
-}
-
-.quickQuestionIcon {
-  width: 28px;
-  height: 28px;
-  background: var(--color-border-light);
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.quickQuestion:hover .quickQuestionIcon {
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
-}
-
-.quickQuestionIcon svg {
-  width: 14px;
-  height: 14px;
-  color: var(--color-text-muted);
-}
-
-.quickQuestion:hover .quickQuestionIcon svg {
-  color: white;
-}
-
-/* ==================== Chat Input ==================== */
-.chatInputWrapper {
-  padding: 16px 24px 24px;
-  border-top: 1px solid var(--color-border);
-}
-
-.chatInput {
-  display: flex;
-  gap: 12px;
-  align-items: flex-end;
-}
-
-.chatInputField {
-  flex: 1;
-  position: relative;
-}
-
-.chatInputTextarea {
-  width: 100%;
-  min-height: 48px;
-  max-height: 150px;
-  padding: 12px 16px;
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-  background-color: var(--color-surface);
-  font-size: 14px;
-  font-family: var(--font-sans);
-  color: var(--color-text-primary);
-  resize: none;
-  transition: all var(--transition-fast);
-}
-
-.chatInputTextarea:hover {
-  border-color: var(--color-primary-light);
-}
-
-.chatInputTextarea:focus {
-  outline: none;
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
-}
-
-.chatInputTextarea::placeholder {
-  color: var(--color-text-muted);
-}
-
-.chatInputSend {
-  width: 48px;
-  height: 48px;
-  background: linear-gradient(135deg, var(--color-cta) 0%, var(--color-cta-hover) 100%);
-  border: none;
-  border-radius: 12px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all var(--transition-fast);
-  box-shadow: 0 4px 14px -3px rgba(245, 158, 11, 0.5);
-  flex-shrink: 0;
-}
-
-.chatInputSend:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px -3px rgba(245, 158, 11, 0.6);
-}
-
-.chatInputSend:active {
-  transform: translateY(0);
-}
-
-.chatInputSend:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
-}
-
-.chatInputSend svg {
-  width: 20px;
-  height: 20px;
-  color: white;
-}
-
-/* ==================== Typing Indicator ==================== */
-.typingIndicator {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.typingIndicatorAvatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 14px;
-  font-weight: 600;
-  flex-shrink: 0;
-}
-
-.typingIndicatorDots {
-  display: flex;
-  gap: 4px;
-  padding: 12px 16px;
-  background: var(--color-border-light);
-  border-radius: 12px;
-  border-bottom-left-radius: 4px;
-}
-
-.typingIndicatorDot {
-  width: 8px;
-  height: 8px;
-  background: var(--color-text-muted);
-  border-radius: 50%;
-  animation: typing 1.4s infinite ease-in-out;
-}
-
-.typingIndicatorDot:nth-child(2) {
-  animation-delay: 0.2s;
-}
-
-.typingIndicatorDot:nth-child(3) {
-  animation-delay: 0.4s;
-}
-
-@keyframes typing {
-  0%, 60%, 100% { transform: translateY(0); }
-  30% { transform: translateY(-4px); }
-}
-
-/* ==================== Responsive ==================== */
-@media (max-width: 1024px) {
-  .contentWrapper {
-    flex-direction: column;
-  }
-
-  .sidebar {
-    width: 100%;
-    border-right: none;
-    border-bottom: 1px solid var(--color-border);
-  }
-
-  .scenarioList {
-    display: flex;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    padding: 12px;
-    gap: 8px;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .scenarioItem {
-    flex-shrink: 0;
-    margin-bottom: 0;
-  }
-
-  .mainContent {
-    padding: 20px;
-  }
-
-  .chatCard {
-    max-width: none;
-    min-height: 500px;
-  }
+.placeholderDescription {
+  max-width: 560px;
+  margin: 16px 0 0;
+  font-size: 15px;
+  line-height: 1.8;
+  color: var(--color-text-secondary);
 }
 
 @media (max-width: 640px) {
-  .pageHeader {
-    padding: 20px 16px;
+  .placeholderWrap {
+    padding: 32px 16px 48px;
   }
 
-  .pageHeaderInner {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
-  }
-
-  .mainContent {
-    padding: 16px;
-  }
-
-  .chatMessages {
-    padding: 16px;
-  }
-
-  .chatMessage {
-    max-width: 90%;
-  }
-
-  .scenarioItemDesc {
-    display: none;
+  .placeholderCard {
+    min-height: 420px;
+    border-radius: 20px;
+    padding: 36px 20px;
   }
 }

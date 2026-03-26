@@ -360,7 +360,7 @@ export default function AnomalyDetection({ apiBase, loginBaseUrl, isLoggedIn, se
             },
             markPoint: {
               symbol: 'circle',
-              symbolSize: 16,
+              symbolSize: 7,
               itemStyle: {
                 color: chartColors.danger,
                 borderColor: '#fff',
@@ -457,7 +457,7 @@ export default function AnomalyDetection({ apiBase, loginBaseUrl, isLoggedIn, se
         value: item.value,
         isAnomaly: item.label === 1,
         anomalyScore: item.anomaly_score,
-        anomalyProbability: item.anomaly_probability,
+        // anomalyProbability: item.anomaly_probability,
       }));
       setResultData({
         type: 'timeseries-anomaly',
