@@ -116,13 +116,13 @@ const config = {
             "to": "/docs/dev"
           },
           {
-            "label": "价格",
-            "to": "/pricing"
-          },
-          {
             label: 'AI体验',
             to: '/playground',
             position: 'left',
+          },
+          {
+            "label": "价格",
+            "to": "/pricing"
           },
           {
             label: '在线体验',
