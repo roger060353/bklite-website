@@ -20,7 +20,7 @@ const config = {
   onBrokenMarkdownLinks: 'warn',
 
   customFields: {
-    apiBaseUrl: 'https://bklite.canway.net/api/v1/mlops',
+    apiBaseUrl: 'https://bklite.canway.net/api/mlops',
     loginBaseUrl: 'https://bklite.canway.net/auth/signin',
   },
 
@@ -116,13 +116,13 @@ const config = {
             "to": "/docs/dev"
           },
           {
-            "label": "价格",
-            "to": "/pricing"
-          },
-          {
             label: 'AI体验',
             to: '/playground',
             position: 'left',
+          },
+          {
+            "label": "价格",
+            "to": "/pricing"
           },
           {
             label: '在线体验',

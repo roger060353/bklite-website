@@ -16,38 +16,46 @@ import { requireAuth, getToken } from '@site/src/lib/playgroundAuth';
 
 import styles from './index.module.css';
 
+const defaultSampleDataUrl = new URL('./sample-data/default.csv', import.meta.url).href;
+
 // ==================== 工具函数 ====================
 
-function formatTimestamp(ts, spanSeconds) {
+function formatTimestamp(ts, spanSeconds, frequencySeconds, mode = 'axis') {
   const d = new Date(ts * 1000);
   if (spanSeconds == null) spanSeconds = 0;
+  if (frequencySeconds == null) frequencySeconds = 0;
   const pad = (n) => String(n).padStart(2, '0');
   const yyyy = d.getFullYear();
   const MM = pad(d.getMonth() + 1);
   const dd = pad(d.getDate());
   const hh = pad(d.getHours());
   const mm = pad(d.getMinutes());
+  const ss = pad(d.getSeconds());
+
+  if (mode === 'tooltip') {
+    if (frequencySeconds >= 365 * 86400) return `${yyyy}-${MM}`;
+    if (frequencySeconds >= 86400) return `${yyyy}-${MM}-${dd}`;
+    if (frequencySeconds >= 3600) return `${yyyy}-${MM}-${dd} ${hh}:00`;
+    if (frequencySeconds >= 60) return `${yyyy}-${MM}-${dd} ${hh}:${mm}`;
+    return `${yyyy}-${MM}-${dd} ${hh}:${mm}:${ss}`;
+  }
+
+  if (frequencySeconds >= 365 * 86400) return `${yyyy}-${MM}`;
+  if (frequencySeconds >= 86400) return `${MM}-${dd}`;
+  if (frequencySeconds >= 3600) {
+    return spanSeconds > 2 * 86400 ? `${MM}-${dd} ${hh}:00` : `${hh}:00`;
+  }
+  if (frequencySeconds >= 60) {
+    return spanSeconds > 86400 ? `${MM}-${dd} ${hh}:${mm}` : `${hh}:${mm}`;
+  }
+  if (frequencySeconds > 0) {
+    return spanSeconds > 3600 ? `${hh}:${mm}:${ss}` : `${mm}:${ss}`;
+  }
+
   if (spanSeconds > 365 * 86400) return `${yyyy}-${MM}`;
   if (spanSeconds > 7 * 86400) return `${MM}-${dd}`;
   if (spanSeconds > 86400) return `${MM}-${dd} ${hh}:${mm}`;
   return `${hh}:${mm}`;
-}
-
-function generateSampleData() {
-  const data = [];
-  const now = Math.floor(Date.now() / 1000);
-  for (let i = 287; i >= 0; i--) {
-    const ts = now - i * 5 * 60;
-    const hour = new Date(ts * 1000).getHours();
-    const base = hour >= 9 && hour <= 18 ? 55 : 30;
-    const noise = (Math.random() - 0.5) * 20;
-    let value = base + noise + Math.sin(i / 10) * 10;
-    data.push({
-      time: ts,
-      value: Math.max(5, Math.min(95, value))
-    });
-  }
-  return data;
 }
 
 function parseTimestamp(raw) {
@@ -62,6 +70,32 @@ function parseTimestamp(raw) {
   const ms = Date.parse(str);
   if (!isNaN(ms)) return Math.floor(ms / 1000);
   return NaN;
+}
+
+function parseCsvSeries(text) {
+  const lines = text.split('\n').filter(l => l.trim() && !l.trim().startsWith('#'));
+  const header = lines[0]?.split(',').map(h => h.trim().toLowerCase().replace(/^"|"$/g, ''));
+  const tsIdx = header?.findIndex(h => ['timestamp', 'time', 'ts'].includes(h));
+  const valIdx = header?.findIndex(h => ['value', 'val'].includes(h));
+
+  if (tsIdx === -1 || valIdx === -1) {
+    throw new Error('CSV 格式错误：需要包含 timestamp 和 value 列');
+  }
+
+  const parsed = [];
+  for (let i = 1; i < lines.length; i++) {
+    const cols = lines[i].split(',').map(c => c.trim().replace(/^"|"$/g, ''));
+    if (cols.length > Math.max(tsIdx, valIdx)) {
+      parsed.push({
+        time: parseTimestamp(cols[tsIdx].trim()),
+        value: Number(cols[valIdx].trim())
+      });
+    }
+  }
+
+  return parsed
+    .filter(d => !isNaN(d.time) && !isNaN(d.value))
+    .sort((a, b) => a.time - b.time);
 }
 
 function detectSeriesFrequencySeconds(series) {
@@ -108,6 +142,14 @@ function formatDurationLabel(totalSeconds) {
   return `${minutes}分钟`;
 }
 
+function getSampleMetaText(series) {
+  if (!Array.isArray(series) || series.length === 0) return '加载中...';
+
+  const frequencySeconds = detectSeriesFrequencySeconds(series) || 5 * 60;
+  const spanSeconds = series.length > 1 ? series[series.length - 1].time - series[0].time : frequencySeconds;
+  return `${formatDurationLabel(spanSeconds || frequencySeconds)} · ${series.length} points`;
+}
+
 const chartColors = {
   primary: '#1E40AF',
   primaryLight: '#3B82F6',
@@ -143,8 +185,11 @@ export default function TimeSeriesPredict({ apiBase, loginBaseUrl, isLoggedIn, s
   const uploadChartInstance = useRef(null);
 
   const activeSeries = dataSource === 'upload' && uploadData?.length ? uploadData : sampleData;
+  const hasSampleData = Boolean(sampleData?.length);
   const detectedFrequencySeconds = detectSeriesFrequencySeconds(activeSeries);
   const frequencyLabel = detectedFrequencySeconds ? formatDurationLabel(detectedFrequencySeconds) : '5分钟';
+  const resultSeries = resultData ? [...resultData.history, ...resultData.prediction] : null;
+  const resultFrequencySeconds = detectSeriesFrequencySeconds(resultSeries) || detectedFrequencySeconds;
 
   const getPredictionTimeLabel = (steps) => {
     const baseFrequency = detectedFrequencySeconds || 5 * 60;
@@ -155,68 +200,115 @@ export default function TimeSeriesPredict({ apiBase, loginBaseUrl, isLoggedIn, s
 
   // 示例数据图表
   useEffect(() => {
-    if (dataSource === 'sample' && sampleChartRef.current) {
+    let cancelled = false;
+    let chart = null;
+    let handleResize = null;
+
+    const loadSampleData = async () => {
+      if (dataSource !== 'sample' || !sampleChartRef.current) {
+        return;
+      }
+
       if (sampleChartInstance.current) {
         sampleChartInstance.current.dispose();
       }
 
-      const chart = echarts.init(sampleChartRef.current);
-      sampleChartInstance.current = chart;
-
-      const data = generateSampleData();
-      setSampleData(data);
-
-      const option = {
-        dataZoom: [
-          { type: 'inside', xAxisIndex: 0, filterMode: 'none', minSpan: 10 },
-        ],
-        grid: { top: 24, right: 24, bottom: 32, left: 56 },
-        xAxis: {
-          type: 'category',
-          data: data.map(d => formatTimestamp(d.time, data.length > 1 ? data[data.length - 1].time - data[0].time : 0)),
-          axisLabel: { fontSize: 11, color: chartColors.text, interval: 47 },
-          axisLine: { lineStyle: { color: chartColors.border } },
-          axisTick: { show: false }
-        },
-        yAxis: {
-          type: 'value',
-          min: 0,
-          max: 100,
-          axisLabel: { fontSize: 11, color: chartColors.text, formatter: '{value}%' },
-          splitLine: { lineStyle: { color: chartColors.border, type: 'dashed' } }
-        },
-        series: [{
-          data: data.map(d => d.value),
-          type: 'line',
-          smooth: true,
-          symbol: 'none',
-          lineStyle: { color: chartColors.primaryLight, width: 2.5 },
-          areaStyle: {
-            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-              { offset: 0, color: 'rgba(59, 130, 246, 0.25)' },
-              { offset: 1, color: 'rgba(59, 130, 246, 0.02)' }
-            ])
-          }
-        }],
-        tooltip: {
-          trigger: 'axis',
-          backgroundColor: 'rgba(255, 255, 255, 0.96)',
-          borderColor: chartColors.border,
-          borderWidth: 1,
-          textStyle: { color: chartColors.primary, fontSize: 13 },
-          formatter: params => `<strong>${params[0].axisValue}</strong><br/>CPU: ${params[0].value.toFixed(1)}%`
+      try {
+        const response = await fetch(defaultSampleDataUrl);
+        if (!response.ok) {
+          throw new Error(`示例数据加载失败: ${response.status}`);
         }
-      };
 
-      chart.setOption(option);
+        const text = await response.text();
+        const data = parseCsvSeries(text);
+        if (!data.length) {
+          throw new Error('示例数据文件为空或格式错误');
+        }
 
-      const handleResize = () => chart.resize();
-      window.addEventListener('resize', handleResize);
-      return () => {
+        if (cancelled || !sampleChartRef.current) {
+          return;
+        }
+
+        setFormError('');
+        setSampleData(data);
+
+        chart = echarts.init(sampleChartRef.current);
+        sampleChartInstance.current = chart;
+
+        const sampleSpanSeconds = data.length > 1 ? data[data.length - 1].time - data[0].time : 0;
+        const sampleFrequencySeconds = detectSeriesFrequencySeconds(data) || 5 * 60;
+
+        const option = {
+          dataZoom: [
+            { type: 'inside', xAxisIndex: 0, filterMode: 'none', minSpan: 10 },
+          ],
+          grid: { top: 24, right: 24, bottom: 32, left: 56 },
+          xAxis: {
+            type: 'category',
+            data: data.map(d => d.time),
+            axisLabel: {
+              fontSize: 11,
+              color: chartColors.text,
+              interval: Math.max(0, Math.floor(data.length / 6) - 1),
+              formatter: value => formatTimestamp(Number(value), sampleSpanSeconds, sampleFrequencySeconds)
+            },
+            axisLine: { lineStyle: { color: chartColors.border } },
+            axisTick: { show: false }
+          },
+          yAxis: {
+            type: 'value',
+            min: 0,
+            max: 100,
+            axisLabel: { fontSize: 11, color: chartColors.text, formatter: '{value}%' },
+            splitLine: { lineStyle: { color: chartColors.border, type: 'dashed' } }
+          },
+          series: [{
+            data: data.map(d => d.value),
+            type: 'line',
+            smooth: true,
+            symbol: 'none',
+            lineStyle: { color: chartColors.primaryLight, width: 2.5 },
+            areaStyle: {
+              color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                { offset: 0, color: 'rgba(59, 130, 246, 0.25)' },
+                { offset: 1, color: 'rgba(59, 130, 246, 0.02)' }
+              ])
+            }
+          }],
+          tooltip: {
+            trigger: 'axis',
+            backgroundColor: 'rgba(255, 255, 255, 0.96)',
+            borderColor: chartColors.border,
+            borderWidth: 1,
+            textStyle: { color: chartColors.primary, fontSize: 13 },
+            formatter: params => `<strong>${formatTimestamp(Number(params[0].axisValue), sampleSpanSeconds, sampleFrequencySeconds, 'tooltip')}</strong><br/>CPU: ${params[0].value.toFixed(1)}%`
+          }
+        };
+
+        chart.setOption(option);
+
+        handleResize = () => chart.resize();
+        window.addEventListener('resize', handleResize);
+      } catch (err) {
+        console.error('示例数据加载失败:', err);
+        if (!cancelled) {
+          setSampleData(null);
+          setFormError(`示例数据加载失败: ${err.message}`);
+        }
+      }
+    };
+
+    loadSampleData();
+
+    return () => {
+      cancelled = true;
+      if (handleResize) {
         window.removeEventListener('resize', handleResize);
+      }
+      if (chart) {
         chart.dispose();
-      };
-    }
+      }
+    };
   }, [dataSource]);
 
   // 上传数据图表
@@ -231,6 +323,7 @@ export default function TimeSeriesPredict({ apiBase, loginBaseUrl, isLoggedIn, s
 
       const interval = Math.max(1, Math.floor(uploadData.length / 6));
       const values = uploadData.map(d => d.value);
+      const uploadSpanSeconds = uploadData.length > 1 ? uploadData[uploadData.length - 1].time - uploadData[0].time : 0;
       const minVal = Math.floor(Math.min(...values));
       const maxVal = Math.ceil(Math.max(...values));
       const padding = Math.max(1, Math.round((maxVal - minVal) * 0.1));
@@ -242,8 +335,13 @@ export default function TimeSeriesPredict({ apiBase, loginBaseUrl, isLoggedIn, s
         grid: { top: 24, right: 24, bottom: 32, left: 56 },
         xAxis: {
           type: 'category',
-          data: uploadData.map(d => formatTimestamp(d.time, uploadData.length > 1 ? uploadData[uploadData.length - 1].time - uploadData[0].time : 0)),
-          axisLabel: { fontSize: 11, color: chartColors.text, interval },
+          data: uploadData.map(d => d.time),
+          axisLabel: {
+            fontSize: 11,
+            color: chartColors.text,
+            interval,
+            formatter: value => formatTimestamp(Number(value), uploadSpanSeconds, detectedFrequencySeconds)
+          },
           axisLine: { lineStyle: { color: chartColors.border } },
           axisTick: { show: false }
         },
@@ -273,7 +371,7 @@ export default function TimeSeriesPredict({ apiBase, loginBaseUrl, isLoggedIn, s
           borderColor: chartColors.border,
           borderWidth: 1,
           textStyle: { color: chartColors.primary, fontSize: 13 },
-          formatter: params => `<strong>${params[0].axisValue}</strong><br/>数值: ${params[0].value}`
+          formatter: params => `<strong>${formatTimestamp(Number(params[0].axisValue), uploadSpanSeconds, detectedFrequencySeconds, 'tooltip')}</strong><br/>数值: ${params[0].value}`
         }
       };
 
@@ -304,6 +402,8 @@ export default function TimeSeriesPredict({ apiBase, loginBaseUrl, isLoggedIn, s
       const allMax = Math.ceil(Math.max(...allValues));
       const allPadding = Math.max(1, Math.round((allMax - allMin) * 0.1));
       const allInterval = Math.max(1, Math.floor(allData.length / 6));
+      const allSpanSeconds = allData.length > 1 ? allData[allData.length - 1].time - allData[0].time : 0;
+      const effectiveResultFrequencySeconds = resultFrequencySeconds || detectSeriesFrequencySeconds(allData);
 
       const historyValues = resultData.history.map(d => d.value);
       const overlapPadding = new Array(Math.max(0, resultData.history.length - 1)).fill(null);
@@ -324,8 +424,13 @@ export default function TimeSeriesPredict({ apiBase, loginBaseUrl, isLoggedIn, s
         },
         xAxis: {
           type: 'category',
-          data: allData.map(d => formatTimestamp(d.time, allData.length > 1 ? allData[allData.length - 1].time - allData[0].time : 0)),
-          axisLabel: { fontSize: 11, color: chartColors.text, interval: allInterval },
+          data: allData.map(d => d.time),
+          axisLabel: {
+            fontSize: 11,
+            color: chartColors.text,
+            interval: allInterval,
+            formatter: value => formatTimestamp(Number(value), allSpanSeconds, effectiveResultFrequencySeconds)
+          },
           axisLine: { lineStyle: { color: chartColors.border } },
           axisTick: { show: false }
         },
@@ -375,7 +480,7 @@ export default function TimeSeriesPredict({ apiBase, loginBaseUrl, isLoggedIn, s
           formatter: params => {
             const point = params[0] || params[1];
             if (!point) return '';
-            let html = `<strong>${point.axisValue}</strong>`;
+            let html = `<strong>${formatTimestamp(Number(point.axisValue), allSpanSeconds, effectiveResultFrequencySeconds, 'tooltip')}</strong>`;
             params.forEach(p => {
               if (p.value != null) {
                 const color = p.seriesName === '预测数据' ? '#F59E0B' : chartColors.primaryLight;
@@ -407,6 +512,10 @@ export default function TimeSeriesPredict({ apiBase, loginBaseUrl, isLoggedIn, s
       setFormError('请选择一个模型');
       return;
     }
+    if (dataSource === 'sample' && !sampleData?.length) {
+      setFormError('示例数据尚未加载完成');
+      return;
+    }
     if (dataSource === 'upload' && !uploadData) {
       setUploadError('请先上传数据文件');
       return;
@@ -423,7 +532,7 @@ export default function TimeSeriesPredict({ apiBase, loginBaseUrl, isLoggedIn, s
       const token = getToken();
 
       const response = await fetch(
-        `${apiBase}/${scenarioConfig.servingName}/${selectedModel}/predict/`,
+        `${apiBase}/predict/${scenarioConfig.algorithmType}/${selectedModel}`,
         {
           method: 'POST',
           headers: {
@@ -487,27 +596,8 @@ export default function TimeSeriesPredict({ apiBase, loginBaseUrl, isLoggedIn, s
             value: Number(item.value || item.val || 0)
           }));
         } else {
-          const lines = text.split('\n').filter(l => l.trim() && !l.trim().startsWith('#'));
-          const header = lines[0]?.split(',').map(h => h.trim().toLowerCase().replace(/^"|"$/g, ''));
-          const tsIdx = header?.findIndex(h => ['timestamp', 'time', 'ts'].includes(h));
-          const valIdx = header?.findIndex(h => ['value', 'val'].includes(h));
-          if (tsIdx === -1 || valIdx === -1) {
-            setUploadError('CSV 格式错误：需要包含 timestamp 和 value 列');
-            return;
-          }
-          for (let i = 1; i < lines.length; i++) {
-            const cols = lines[i].split(',').map(c => c.trim().replace(/^"|"$/g, ''));
-            if (cols.length > Math.max(tsIdx, valIdx)) {
-              parsed.push({
-                time: parseTimestamp(cols[tsIdx].trim()),
-                value: Number(cols[valIdx].trim())
-              });
-            }
-          }
+          parsed = parseCsvSeries(text);
         }
-
-        parsed = parsed.filter(d => !isNaN(d.time) && !isNaN(d.value));
-        parsed.sort((a, b) => a.time - b.time);
 
         if (parsed.length === 0) {
           setUploadError('未解析到有效数据，请检查文件格式');
@@ -581,7 +671,7 @@ export default function TimeSeriesPredict({ apiBase, loginBaseUrl, isLoggedIn, s
                   <FiActivity />
                   服务器 CPU 使用率监控数据
                 </span>
-                <span className={styles.sampleDataInfo}>24h · 288 points</span>
+                <span className={styles.sampleDataInfo}>{getSampleMetaText(sampleData)}</span>
               </div>
               <div className={styles.sampleDataChart} ref={sampleChartRef}></div>
             </div>
@@ -693,7 +783,7 @@ export default function TimeSeriesPredict({ apiBase, loginBaseUrl, isLoggedIn, s
         <button
           className={clsx(styles.btn, styles.btnPrimary)}
           onClick={handleRunInference}
-          disabled={loading || !selectedModel}
+          disabled={loading || !selectedModel || (dataSource === 'sample' ? !hasSampleData : !uploadData?.length)}
         >
           <FiPlay />
           开始时序预测

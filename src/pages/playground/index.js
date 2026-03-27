@@ -32,10 +32,18 @@ export default function DemoPage() {
         <div className={styles.tabBar}>
           <div className={styles.tabBarInner}>
             <button
+              type="button"
               className={clsx(styles.tabItem, activeTab === 'mlops' && styles.tabItemActive)}
               onClick={() => setActiveTab('mlops')}
             >
               MLOps
+            </button>
+            <button
+              type="button"
+              className={clsx(styles.tabItem, activeTab === 'opspilot' && styles.tabItemActive)}
+              onClick={() => setActiveTab('opspilot')}
+            >
+              OpsPilot
             </button>
           </div>
         </div>
