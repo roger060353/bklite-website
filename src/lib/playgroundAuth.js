@@ -28,6 +28,11 @@ function setCookie(name, value) {
   document.cookie = `${name}=${encodeURIComponent(value)}; path=/; SameSite=Lax`;
 }
 
+function removeCookie(name) {
+  if (typeof document === 'undefined') return;
+  document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax`;
+}
+
 function notifyAuthStateChange() {
   if (typeof window === 'undefined') return;
   window.dispatchEvent(new CustomEvent(AUTH_STATE_CHANGE_EVENT));
@@ -129,4 +134,15 @@ export function requireAuth(loginBaseUrl) {
   if (hasToken()) return true;
   redirectToLogin(loginBaseUrl);
   return false;
+}
+
+/**
+ * 退出登录：清理 token 与中间态，并广播认证状态变更
+ */
+export function logout() {
+  if (!isBrowser()) return;
+
+  removeCookie(TOKEN_COOKIE_NAME);
+  sessionStorage.removeItem(LOGIN_CODE_KEY);
+  notifyAuthStateChange();
 }

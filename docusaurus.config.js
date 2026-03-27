@@ -136,6 +136,11 @@ const config = {
             label: 'GitHub',
             position: 'right',
           },
+          {
+            type: 'custom-logout',
+            label: '账号',
+            position: 'right',
+          },
         ],
       },
       footer: {

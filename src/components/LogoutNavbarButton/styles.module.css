@@ -1,0 +1,175 @@
+.accountMenu {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.accountButton {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.86);
+  color: #64748b;
+  box-shadow:
+    0 4px 14px rgba(15, 23, 42, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  backdrop-filter: blur(12px) saturate(160%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.24s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.accountButton svg {
+  width: 18px;
+  height: 18px;
+}
+
+.accountButton:hover {
+  transform: translateY(-1px);
+  color: #1d4ed8;
+  border-color: rgba(59, 130, 246, 0.24);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow:
+    0 10px 24px rgba(59, 130, 246, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.82);
+}
+
+.accountButtonOpen {
+  color: #1d4ed8;
+  border-color: rgba(59, 130, 246, 0.28);
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow:
+    0 12px 28px rgba(59, 130, 246, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.84);
+}
+
+.menuPanel {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  min-width: 164px;
+  padding: 8px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(226, 232, 240, 0.92);
+  box-shadow:
+    0 18px 38px rgba(15, 23, 42, 0.12),
+    0 2px 10px rgba(15, 23, 42, 0.06);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  backdrop-filter: blur(16px) saturate(160%);
+  z-index: 1200;
+}
+
+.menuHeader {
+  padding: 6px 10px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #94a3b8;
+  letter-spacing: 0.02em;
+}
+
+.menuItem {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  border-radius: 12px;
+  padding: 11px 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.menuItem:hover {
+  background: rgba(248, 250, 252, 0.96);
+  color: #dc2626;
+}
+
+.mobileLogoutButton {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  margin-top: 6px;
+  border-radius: 12px;
+  background: rgba(248, 250, 252, 0.88);
+  color: #0f172a;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.mobileLogoutButton:hover {
+  background: rgba(239, 68, 68, 0.08);
+  color: #dc2626;
+}
+
+[data-theme='dark'] .accountButton {
+  color: #cbd5e1;
+  background: rgba(15, 23, 42, 0.72);
+  border-color: rgba(148, 163, 184, 0.2);
+  box-shadow:
+    0 6px 18px rgba(2, 6, 23, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+[data-theme='dark'] .accountButton:hover {
+  color: #f8fafc;
+  background: rgba(30, 41, 59, 0.92);
+  border-color: rgba(96, 165, 250, 0.3);
+  box-shadow:
+    0 10px 24px rgba(59, 130, 246, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+[data-theme='dark'] .accountButtonOpen {
+  color: #f8fafc;
+  background: rgba(30, 41, 59, 0.94);
+  border-color: rgba(96, 165, 250, 0.34);
+}
+
+[data-theme='dark'] .menuPanel {
+  background: rgba(15, 23, 42, 0.94);
+  border-color: rgba(51, 65, 85, 0.9);
+  box-shadow:
+    0 22px 40px rgba(2, 6, 23, 0.4),
+    0 2px 10px rgba(2, 6, 23, 0.24);
+}
+
+[data-theme='dark'] .menuHeader {
+  color: #94a3b8;
+}
+
+[data-theme='dark'] .menuItem {
+  color: #f8fafc;
+}
+
+[data-theme='dark'] .menuItem:hover {
+  background: rgba(30, 41, 59, 0.92);
+  color: #fda4af;
+}
+
+[data-theme='dark'] .mobileLogoutButton {
+  background: rgba(30, 41, 59, 0.92);
+  color: #f8fafc;
+}
+
+[data-theme='dark'] .mobileLogoutButton:hover {
+  background: rgba(127, 29, 29, 0.24);
+  color: #fecaca;
+}
+
+@media (max-width: 996px) {
+  .accountButton {
+    display: none;
+  }
+}
