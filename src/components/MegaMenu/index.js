@@ -17,7 +17,7 @@ const productGroups = [
     {
         title: '平台底座',
         products: [
-            { name: '控制台', description: '一站访问 · 通知聚合 · 智能推荐', link: '/docs/playground/introduce' },
+            { name: '控制台', description: '一站访问 · 通知聚合 · 智能推荐', link: '/docs/console/introduce' },
             { name: '系统管理', description: '权限隔离 · 精细管控 · 全程追溯', link: '/docs/system/introduce' },
             { name: '节点管理', description: '跨云管理 · 自动部署 · 状态可视', link: '/docs/node/introduce' },
         ]
